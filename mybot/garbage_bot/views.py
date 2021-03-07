@@ -3,6 +3,8 @@ from django.http import HttpResponse, JsonResponse, HttpResponseRedirect
 import os, json
 
 import requests
+
+import datetime
 # Create your views here.
 
 LINE_CHANNEL_SECRET = os.environ["LINE_CHANNEL_SECRET"]
@@ -30,10 +32,31 @@ def callback(request):
                     text = event['message']['text']
 
                     # 応答 bot を呼ぶ
-                    reply_msg(reply_token, "ふなっしーとは付かず離れずの距離を保っていたい")
+                    reply_msg(reply_token, "ふなっしー？ふなっしーとは付かず離れずの距離を保っていたい")
                     # reply += tool.reply_text(reply_token, text)
         return HttpResponse(status=200)
 
+
+
+def parse_message(msg):
+    # TODO: 燃えるゴミ・燃えないゴミの日を通知する。
+    # NLP技術用いていずれ高度化する
+    garbage_type = "flammable"
+    if "燃える" in msg:
+        pass
+    elif "燃えない" in msg:
+        garbage_type = "inflammable"
+    else:
+        garbage_type = "unknown"
+    return garbage_type
+
+
+
+
+def get_next_trash_day_of(garbage_type):
+
+    # TODO: dayOfWeekから次の{garbage_type}のゴミの日を計算してくれるmethod
+    pass
 
 
 
