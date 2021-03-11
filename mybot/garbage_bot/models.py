@@ -16,7 +16,7 @@ class Area(models.Model):
     area_id = models.PrimaryKey()
     area_name = models.CharField(max_length=15, null=True)
     area_name_capital = models.CharField(max_length=2, null=False)
-    area_detail = models.models.CharField(max_length=30, null=False)
+    area_detail = models.CharField(max_length=30, null=False)
 
 class GarbageType(models.Model):
     # TODO: develop the data model.
@@ -37,8 +37,15 @@ class Area2Day(models.Model):
     #   - area_id
     #   - garbage_type
     #   - day
+    # 不燃は月一
+    # collection_schedule: 第何週にゴミ回収があるのかの情報をいれる
+    # TODO: feature/model_dev
+    # collection_schedule & weekday_info
+    # 複数ある収集日をどう扱うか、要検討
     area_id = models.ForeignKey(Area)
     garbage_type = models.ForeignKey(GarbageType)
     weekday_info = models.IntegerField()
+
+    collection_schedule = models.IntegerField(default=-1)
     optional = CharField(max_length=10, null=False)
 
