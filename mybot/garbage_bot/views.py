@@ -11,6 +11,17 @@ LINE_CHANNEL_SECRET = os.environ["LINE_CHANNEL_SECRET"]
 LINE_ACCESS_TOKEN = os.environ["LINE_ACCESS_TOKEN"]
 from django.views.decorators.csrf import csrf_exempt
 
+# for schedule calculation.
+today = datetime.datetime.now()
+td = today.date()
+curr_day = td.day
+curr_weekday = today.date().weekday()
+weekday_of_first_day = td.replace(day=1).weekday()
+curr_month = td.month
+weekdays = []
+for d in range(1, 8):
+    weekdays.append((d, (weekday_of_first_day + d - 1)%7))
+
 @csrf_exempt
 def callback(request):
     # TODO: This function would be called when linebot was spoken by user
@@ -53,10 +64,43 @@ def parse_message(msg):
 
 
 
-def get_next_trash_day_of(garbage_type):
 
+
+def get_next_trash_day_of(garbage_type, area_code):
+    
     # TODO: dayOfWeekから次の{garbage_type}のゴミの日を計算してくれるmethod
-    pass
+    # areaの指定
+    # area = "夏見5～7丁目"
+    # >>> get_trash_info_area_of(area)
+    # The information is retrieved from the below site.
+    # "https://www.city.funabashi.lg.jp/kurashi/gomi/001/p001523.html"
+    # 
+    trash_info = get_trash_info_area_of(area_code)
+    datetime.datetime.now()
+    # get 
+    trash_info[garbage_type]
+    import calendar
+    day = 2
+    times = 3
+    garbage_type = "燃えるゴミ"
+    first_target_weekday = list(filter(lambda x: x[1] == day, weekdays))
+    if len(first_target_weekday) == 1:
+        # get day first_target_weekday[0][0]
+        # 対象となる第{times}{day}曜日 (times - 1) * 7
+        target_day = first_target_weekday[0][0] + (times - 1) * 7
+    return f"{curr_month}月の{target_day}日が{garbage_type}を捨てる日だよ！"
+
+
+
+def get_trash_info_area_of(area) -> dict:
+    # TODO: get data from area_trash_days table
+    # we have to retrieve info like the sample_natsume 
+    # "mon":0, "tue":1, "wed":2, "thu":3, "fri":4, "sat":5, "sun":6
+    # According to pandas document, the day of the week with Monday=0, Sunday=6.
+    sample_natsume = {"burnable":"火金-(夜)",
+                    "non_burnable":"3木",  "Resources・PET" : "水", "valuables" : "水"}
+    # 
+    return sample_natsume
 
 
 
@@ -90,20 +134,11 @@ def get_message_body(text, text_type):
             "items": [
             {
                 "type": "action",
-                # "imageUrl": "https://example.com/sushi.png",
-                "action": {
-                "type": "message",
-                "label": "Sushi",
-                "text": "Sushi"
-                }
-            },
-            {
-                "type": "action",
                 # "imageUrl": "https://example.com/tempura.png",
                 "action": {
                 "type": "message",
-                "label": "Tempura",
-                "text": "Tempura"
+                "label": "Remind",
+                "text": "Remind"
                 }
             },
             {
