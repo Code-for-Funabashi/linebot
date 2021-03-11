@@ -1,6 +1,6 @@
 from django.shortcuts import render
 from django.http import HttpResponse, JsonResponse, HttpResponseRedirect
-import os, json
+import os, json, re
 
 import requests
 
@@ -18,9 +18,9 @@ curr_day = td.day
 curr_weekday = today.date().weekday()
 weekday_of_first_day = td.replace(day=1).weekday()
 curr_month = td.month
-weekdays = []
+first_weekdays = []
 for d in range(1, 8):
-    weekdays.append((d, (weekday_of_first_day + d - 1)%7))
+    first_weekdays.append((d, (weekday_of_first_day + d - 1)%7))
 
 @csrf_exempt
 def callback(request):
@@ -36,14 +36,16 @@ def callback(request):
             # イベントの取得
             # import pdb;pdb.set_trace()
             for event in request_json['events']:
+                print(event)
                 reply_token = event['replyToken']
                 message_type = event['message']['type']
 
                 if message_type == 'text':
                     text = event['message']['text']
+                    content_type = parse_message(text)
 
                     # 応答 bot を呼ぶ
-                    reply_msg(reply_token, "ふなっしー？ふなっしーとは付かず離れずの距離を保っていたい")
+                    choose_response(content_type)
                     # reply += tool.reply_text(reply_token, text)
         return HttpResponse(status=200)
 
@@ -52,16 +54,26 @@ def callback(request):
 def parse_message(msg):
     # TODO: 燃えるゴミ・燃えないゴミの日を通知する。
     # NLP技術用いていずれ高度化する
-    garbage_type = "flammable"
+    garbage_type = "burnable"
     if "燃える" in msg:
         pass
     elif "燃えない" in msg:
-        garbage_type = "inflammable"
+        garbage_type = "non_burnable"
+    elif "ゴミ" in msg and re.match("？|?", msg):
+        garbage_type = "next_ask_trash_type"
     else:
         garbage_type = "unknown"
     return garbage_type
 
 
+def choose_response(content_type):
+    if content_type == "next_ask_trash_type":
+        reply_msg(reply_token, "ありがとうございますー！何のゴミの収集日を聞きたいですか？")
+    elif content_type == "unknown":
+        reply_msg(reply_token, "ふなっしー？ふなっしーとは付かず離れずの距離を保っていたい")
+    else:
+        trash_info = get_next_trash_day_of(garbage_type, area_code)
+        reply_msg(reply_token, trash_info)
 
 
 
@@ -76,18 +88,21 @@ def get_next_trash_day_of(garbage_type, area_code):
     # "https://www.city.funabashi.lg.jp/kurashi/gomi/001/p001523.html"
     # 
     trash_info = get_trash_info_area_of(area_code)
-    datetime.datetime.now()
     # get 
-    trash_info[garbage_type]
+    when2collect = trash_info[garbage_type]
     import calendar
-    day = 2
-    times = 3
-    garbage_type = "燃えるゴミ"
-    first_target_weekday = list(filter(lambda x: x[1] == day, weekdays))
+    nthWeek, weekdays, day_or_night= when2collect.split("/")
+    weekdays = [int(wd) for wd in weekdays]
+    first_target_weekday = list(filter(lambda x: x[1] in weekdays, first_weekdays))
     if len(first_target_weekday) == 1:
         # get day first_target_weekday[0][0]
-        # 対象となる第{times}{day}曜日 (times - 1) * 7
-        target_day = first_target_weekday[0][0] + (times - 1) * 7
+        # 対象となる第{nthWeek}{day}曜日 (nthWeek - 1) * 7
+        target_day = first_target_weekday[0][0] + (int(nthWeek) - 1) * 7
+    elif len(first_target_weekday) >= 2: # 可燃ごみ
+        return "ちょっと手元の台帳には書いてないわ、ごめんよ"
+        pass
+    else:
+        return "ちょっとわからんかったわ"
     return f"{curr_month}月の{target_day}日が{garbage_type}を捨てる日だよ！"
 
 
@@ -97,8 +112,12 @@ def get_trash_info_area_of(area) -> dict:
     # we have to retrieve info like the sample_natsume 
     # "mon":0, "tue":1, "wed":2, "thu":3, "fri":4, "sat":5, "sun":6
     # According to pandas document, the day of the week with Monday=0, Sunday=6.
-    sample_natsume = {"burnable":"火金-(夜)",
-                    "non_burnable":"3木",  "Resources・PET" : "水", "valuables" : "水"}
+    # syntax: {1}/{2}/{3}
+    #   {1}: n-th week or every week (-1)
+    #   {2}: weekdays
+    #   {3}: day or night (or no information if blank)
+    sample_natsume = {"burnable":"-1/1,2/night",
+                    "non_burnable":"3/3/",  "Resources・PET" : "-1/2/", "valuables" : "-1/2/"}
     # 
     return sample_natsume
 
