@@ -18,6 +18,8 @@ curr_day = td.day
 curr_weekday = today.date().weekday()
 weekday_of_first_day = td.replace(day=1).weekday()
 curr_month = td.month
+
+# 今月分しかデータ取得できないし、何よりglobalで管理するべきではない気がする。
 first_weekdays = []
 for d in range(1, 8):
     first_weekdays.append((d, (weekday_of_first_day + d - 1)%7))
@@ -91,15 +93,23 @@ def get_next_trash_day_of(garbage_type, area_code):
     when2collect = trash_info[garbage_type]
     import calendar
     nthWeek, weekdays, day_or_night= when2collect.split("/")
-    weekdays = [int(wd) for wd in weekdays]
+    weekdays = [int(wd) for wd in weekdays.split(",")]
+    nthWeek = int(nthWeek)
     first_target_weekday = list(filter(lambda x: x[1] in weekdays, first_weekdays))
+
     if len(first_target_weekday) == 1:
         # get day first_target_weekday[0][0]
         # 対象となる第{nthWeek}{day}曜日 (nthWeek - 1) * 7
-        target_day = first_target_weekday[0][0] + (int(nthWeek) - 1) * 7
-    elif len(first_target_weekday) >= 2: # 可燃ごみ
-        return "ちょっと手元の台帳には書いてないわ、ごめんよ"
-        pass
+        target_day = first_target_weekday[0][0] + (nthWeek - 1) * 7
+    elif len(first_target_weekday) >= 2: 
+        # 可燃ごみ
+        # import pdb; pdb.set_trace()
+        if nthWeek == -1:# every week garbages are collected.
+            first_days = [fwd[0] for fwd in first_target_weekday]
+            candidate_days = [fd + (nthWeek_ - 1) * 7 for fd in first_days for nthWeek_ in range(1, 6)
+                     if fd + (nthWeek_ - 1) * 7 < 32]
+            # next dayを見つける
+            target_day = min(filter(lambda x: x >= curr_day, candidate_days))
     else:
         return "ちょっとわからんかったわ"
     return f"{curr_month}月の{target_day}日が{garbage_type}を捨てる日だよ！"
