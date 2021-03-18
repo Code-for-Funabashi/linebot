@@ -112,7 +112,7 @@ def get_next_trash_day_of(garbage_type, area_code):
             target_day = min(filter(lambda x: x >= curr_day, candidate_days))
     else:
         return "ちょっとわからんかったわ"
-    return f"{curr_month}月の{target_day}日が{garbage_type}を捨てる日だよ！"
+    return f"{curr_month}月の{target_day}日が{garbage_type}を捨てる日だよ！{'時間帯は' + day_or_night + 'だよ' if day_or_night else '' }"
 
 
 
