@@ -24,7 +24,7 @@ for d in range(1, 8):
 
 @csrf_exempt
 def callback(request):
-    # TODO: This function would be called when linebot was spoken by user
+    # TODO: This function would be called when linebot was spoken to by user
     # 
     # 
     # import pdb; pdb.set_trace()
@@ -72,10 +72,9 @@ def choose_response(content_type):
     elif content_type == "unknown":
         reply_msg(reply_token, "ふなっしー？ふなっしーとは付かず離れずの距離を保っていたい")
     else:
+        # burnable / non_burnable
         trash_info = get_next_trash_day_of(garbage_type, area_code)
         reply_msg(reply_token, trash_info)
-
-
 
 
 def get_next_trash_day_of(garbage_type, area_code):
