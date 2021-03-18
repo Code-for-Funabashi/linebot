@@ -132,6 +132,25 @@ def get_trash_info_area_of(area) -> dict:
 
 
 
+def set_reminder():
+    """
+    朝の時間帯にpush messageを送信するように記録しておく機能
+    ---
+
+    CREATE 
+    (uuid, when2push, garbage_type) INTO Remind;
+    """
+    return "TO BE DONE"
+
+def push_remind():
+    """
+    朝8時に 1-3までを実行する
+    1. Execute the following query
+        SELECT * WHERE when2push == {str(td)};
+    2. QuerySetをuuidごとにまとめ、それぞれのユーザに対してメッセージを送信する。
+    """
+
+
 
 def reply_msg(reply_token, text):
     url = "https://api.line.me/v2/bot/message/reply"
