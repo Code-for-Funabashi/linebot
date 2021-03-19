@@ -46,3 +46,8 @@ class Area2Day(models.Model):
     weekday_info = models.IntegerField()
     optional = CharField(max_length=10, null=False)
 
+
+class Remind(models.Model):
+    uuid = models.CharField(max_length=64, null=False)
+    when2push = models.DateField(auto_now=True)
+    garbage_type = models.ForeignKey(GarbageType)

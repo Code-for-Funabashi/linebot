@@ -149,6 +149,8 @@ def push_remind():
         SELECT * WHERE when2push == {str(td)};
     2. QuerySetをuuidごとにまとめ、それぞれのユーザに対してメッセージを送信する。
     """
+    
+    pass
 
 
 
