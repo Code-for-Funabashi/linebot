@@ -11,19 +11,6 @@ class GarbageBotConfig(AppConfig):
         post_migrate.connect(setup_dummy_social_apps, sender=self)
 
 
-# データテーブル
-# from urllib import request
-# import ssl
-# # , flavor="bs4"
-# url="https://www.city.funabashi.lg.jp/kurashi/gomi/001/p001523.html"
-# context = ssl._create_unverified_context()
-# response = request.urlopen(url, context=context)
-# html = response.read()
-# collectionDayPerArea = pd.read_html(html)
-# from IPython.display import display
-# for i in collectionDayPerArea:
-#     display(i)
-
 
 
 def setup_Location_data(sender, **kwargs):

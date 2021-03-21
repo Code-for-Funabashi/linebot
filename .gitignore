@@ -5,3 +5,5 @@
 
 config.yml
 /mybot/db.sqlite3
+.ipynb_checkpoints
+how_to_treat_open_data.ipynb
