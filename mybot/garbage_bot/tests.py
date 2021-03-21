@@ -13,6 +13,8 @@ class Garbage_BotTestCase(TestCase):
         ]
 
     # fixtures
+
+
     # End
 
     def test_get_next_trash_day_of(self):

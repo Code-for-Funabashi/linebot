@@ -18,14 +18,26 @@ def setup_Location_data(sender, **kwargs):
     django appをサーバに立ち上げるタイミングで船橋のゴミ収集情報をDBに立ち上げる
     """
     from django.contrib.sites.models import Site
-    from models import Location
+    import pandas as pd
+    from models import Area
 
     site = Site.objects.get_current()
     # 
+    area_name = df["町名.1"]
+    area_name_capital = df["町名"]
+    area_detail = df["番地詳細"]
+    # df.apply(lambda row: )
+    Area.objects.create(
+        area_name=area_name,
+        area_name_capital=area_name_capital,
+        area_detail=area_detail,
+    )
+    # bulk_createを用いる。
+    
 
-    app = SocialApp.objects.create(
-        provider=provider.id,
-        secret='secret',
-        client_id='client-id',
-        name='Dummy %s app' % provider.id)
+    # app = SocialApp.objects.create(
+    #     provider=provider.id,
+    #     secret='secret',
+    #     client_id='client-id',
+    #     name='Dummy %s app' % provider.id)
     app.sites.add(site)

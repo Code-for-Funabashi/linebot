@@ -44,7 +44,9 @@ class Area2Day(models.Model):
     area_id = models.ForeignKey(Area)
     garbage_type = models.ForeignKey(GarbageType)
     weekday_info = models.IntegerField()
-    optional = CharField(max_length=10, null=False)
+    nth_week = models.IntegerField()
+    day_or_night = models.IntegerField()
+    # models.JSONField()
 
 
 class Remind(models.Model):
