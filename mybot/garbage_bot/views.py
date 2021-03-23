@@ -160,10 +160,13 @@ def push_remind():
         SELECT * WHERE when2push == {str(td)};
     2. QuerySetをuuidごとにまとめ、それぞれのユーザに対してメッセージを送信する。
     """
+    today = datetime.date.today()
     QuerySet = Remind.objects.filter(
-        when2push__gt=datetime.datetime.now(),
-        when2push__lt=datetime.datetime.now() + datetime.timedelta(minutes=2),
+        when2push__day=today.day,
+        when2push__year=today.year,
+        when2push__month=today.month,
     )
+    import pdb;pdb.set_trace()
     target_uuids = []
     for q in QuerySet:
         print("Push remind message for ", q.uuid)
