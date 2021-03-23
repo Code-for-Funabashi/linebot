@@ -17,10 +17,10 @@ class Area(models.Model):
     #   - area_name_capital: 町名の頭文字
 
     #   - area_detail: 番地詳細
-    area_id = models.PrimaryKey()
+    area_id = models.IntegerField(primary_key=True)
     area_name = models.CharField(max_length=15, null=True)
     area_name_capital = models.CharField(max_length=2, null=False)
-    area_detail = models.models.CharField(max_length=30, null=False)
+    area_detail = models.CharField(max_length=30, null=False)
 
 class GarbageType(models.Model):
     # TODO: develop the data model.
@@ -31,19 +31,17 @@ class GarbageType(models.Model):
     garbage_type = models.IntegerField(primary_key=True)
     garbage_name = models.CharField(max_length=10, null=False)
 
-    pass
 
-
-class Area2Day(models.Model):
+class CollectDay(models.Model):
     # TODO: develop the data model.
     # many2many
     # property list
     #   - area_id
     #   - garbage_type
     #   - day
-    area_id = models.ForeignKey(Area)
-    garbage_type = models.ForeignKey(GarbageType)
-    weekday_info = models.IntegerField()
+    area_id = models.ForeignKey(Area, on_delete=models.CASCADE)
+    garbage_type = models.ForeignKey(GarbageType, on_delete=models.CASCADE)
+    weekday_info = models.CharField(max_length=10, null=False)
     nth_week = models.IntegerField()
     day_or_night = models.IntegerField()
     # models.JSONField()
@@ -52,4 +50,4 @@ class Area2Day(models.Model):
 class Remind(models.Model):
     uuid = models.CharField(max_length=64, null=False)
     when2push = models.DateField(auto_now=True)
-    garbage_type = models.ForeignKey(GarbageType)
+    garbage_type = models.ForeignKey(GarbageType, on_delete=models.CASCADE)

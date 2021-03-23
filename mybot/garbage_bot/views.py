@@ -7,6 +7,9 @@ import requests
 import datetime
 # Create your views here.
 
+from garbage_bot.models import Remind
+
+
 LINE_CHANNEL_SECRET = os.environ["LINE_CHANNEL_SECRET"]
 LINE_ACCESS_TOKEN = os.environ["LINE_ACCESS_TOKEN"]
 from django.views.decorators.csrf import csrf_exempt
@@ -47,7 +50,7 @@ def callback(request):
                     content_type = parse_message(text)
 
                     # 応答 bot を呼ぶ
-                    choose_response(content_type)
+                    choose_response(content_type, text)
                     # reply += tool.reply_text(reply_token, text)
         return HttpResponse(status=200)
 
@@ -56,23 +59,31 @@ def callback(request):
 def parse_message(msg):
     # TODO: 燃えるゴミ・燃えないゴミの日を通知する。
     # NLP技術用いていずれ高度化する
-    garbage_type = "burnable"
+    garbage_type = "unknown"
+    
     if "燃える" in msg:
-        pass
+        garbage_type = "burnable"
     elif "燃えない" in msg:
         garbage_type = "non_burnable"
-    elif "ゴミ" in msg and re.match("？|?", msg):
+    elif "ゴミ" in msg and re.findall(r"捨てたい|？", msg):
         garbage_type = "next_ask_trash_type"
+    elif len(msg) == 1:
+        talk_themes = json.load(open("garbage_bot/statics/talks.json"))
+        if talk_themes.get(msg):
+            garbage_type = "casual_talk"
     else:
-        garbage_type = "unknown"
+        pass
     return garbage_type
 
 
-def choose_response(content_type):
+def choose_response(content_type, text):
     if content_type == "next_ask_trash_type":
         reply_msg(reply_token, "ありがとうございますー！何のゴミの収集日を聞きたいですか？")
     elif content_type == "unknown":
         reply_msg(reply_token, "ふなっしー？ふなっしーとは付かず離れずの距離を保っていたい")
+    elif content_type == "casual_talk":
+        talk_themes = json.loads("./statics/talks.json")
+        reply_msg(reply_token, talk_themes[text])
     else:
         # burnable / non_burnable
         trash_info = get_next_trash_day_of(garbage_type, area_code)
@@ -149,8 +160,16 @@ def push_remind():
         SELECT * WHERE when2push == {str(td)};
     2. QuerySetをuuidごとにまとめ、それぞれのユーザに対してメッセージを送信する。
     """
-    
-    pass
+    QuerySet = Remind.objects.filter(
+        when2push__gt=datetime.datetime.now(),
+        when2push__lt=datetime.datetime.now() + datetime.timedelta(minutes=2),
+    )
+    target_uuids = []
+    for q in QuerySet:
+        print("Push remind message for ", q.uuid)
+        # the pushing processing will be implemented later.
+        target_uuids.append(q.uuid)
+    return target_uuids
 
 
 

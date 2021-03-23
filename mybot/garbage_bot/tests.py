@@ -1,8 +1,11 @@
 from django.test import TestCase
 from .views import *
+import datetime
+from garbage_bot.models import Remind, GarbageType
 # Create your tests here.
 
 class Garbage_BotTestCase(TestCase):
+    fixtures = ["garbage_bot/fixtures/fixture_1.json"]
     def setUp(self):
         # garbage_type, area_code, expected
         self.parameters_type_area = [
@@ -11,6 +14,25 @@ class Garbage_BotTestCase(TestCase):
             ("burnable", "natsume", f"3月の23日がburnableを捨てる日だよ！時間帯はnightだよ"),
             ("non_burnable", "natsume", f"3月の18日がnon_burnableを捨てる日だよ！"), 
         ]
+        self.parameters_parse_message = [
+            ("燃える", "burnable"),
+            ("燃えない", "non_burnable"),
+            ("ゴミ捨てたい", "next_ask_trash_type"),
+            # ("可燃ゴミ捨てたい？", "burnable"),
+            ("あ", "casual_talk"),
+            ("ち", "casual_talk"),
+            ("？", "unknown"),
+        ]
+        Remind.objects.create(
+            uuid=os.environ["LINE_TEST_UID"],
+            # Currently when2push = models.DateField(auto_now=True)
+            # We have to consider which datatype we should use; date or datetime.
+            when2push=datetime.datetime.now() + datetime.timedelta(minutes=1),
+            # ValueError: Cannot assign "1": "Remind.garbage_type" must be a "GarbageType" instance.
+            garbage_type=GarbageType.objects.get(garbage_type=1)
+        ).save()
+
+    wd2id = {"月": 0 , "火": 1, "水": 2, "木":3, "金":4, "土":5, "日": 6}
 
     # fixtures
 
@@ -25,6 +47,13 @@ class Garbage_BotTestCase(TestCase):
                     expected, 
                     get_next_trash_day_of(garbage_type, area_code)
                     )
-    
 
-    
+    def test_push_remind(self):
+        target_uuids = push_remind()
+        self.assertEqual(target_uuids, [os.environ["LINE_TEST_UID"]])
+        # when2push
+
+    def test_parse_message(self):
+        for p, expected in self.parameters_parse_message:
+            with self.subTest(p=p):
+                self.assertEqual(expected, parse_message(p))

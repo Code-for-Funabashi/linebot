@@ -1,0 +1,65 @@
+[
+    {
+      "model": "garbage_bot.area",
+      "area_id": 1,
+      "fields": {
+        "area_name_capital": "あ",
+        "area_name": "旭町1丁目",
+        "area_detail": "None"  
+      }
+    },
+    {
+      "model": "garbage_bot.area",
+      "area_id": 2,
+      "fields": {
+        "area_name_capital": "あ",
+        "area_name": "旭町2丁目",
+        "area_detail": "1～18,23～27"
+      }
+    },
+    {
+      "model": "garbage_bot.garbagetype",
+      "garbage_type": 1,
+      "fields": {
+        "garbage_name": "burnable"
+      }
+    },
+    {
+      "model": "garbage_bot.garbagetype",
+      "garbage_type": 2,
+      "fields": {
+        "garbage_name": "non_burnable"
+      }
+    },
+    {
+      "model": "garbage_bot.garbagetype",
+      "garbage_type": 3,
+      "fields": {
+        "garbage_name": "resources"
+      }
+    },
+    { 
+      "model": "garbage_bot.collectday",
+      
+      "fields": {
+        "area_id": 1,
+        "garbage_type": 1,
+        "weekday_info": "0,3",
+        "nth_week": -1,
+        "day_or_night": 1 
+      }
+    },
+    { 
+      "model": "garbage_bot.collectday",
+      
+      "fields": {
+        "area_id": 2,
+        "garbage_type": 1,
+        "weekday_info": "0,3",
+        "nth_week": -1,
+        "day_or_night": 1 
+      }
+    }
+
+   
+]
