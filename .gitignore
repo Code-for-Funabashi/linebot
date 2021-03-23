@@ -7,3 +7,11 @@ config.yml
 /mybot/db.sqlite3
 .ipynb_checkpoints
 how_to_treat_open_data.ipynb
+.env
+
+# migrations
+/mybot/garbage_bot/migrations/*
+
+
+# __pychache__
+/**/__pycache__/
