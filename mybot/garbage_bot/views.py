@@ -184,7 +184,7 @@ def push_remind():
 
 
 def reply_msg(reply_token, text):
-    url = "https://api.line.me/v2/bot/message/reply"
+    url = os.environ["LINE_ENDPOINT"]
     body = {
         "replyToken":reply_token,
         "messages":[
