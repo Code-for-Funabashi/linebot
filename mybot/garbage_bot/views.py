@@ -31,7 +31,6 @@ for d in range(1, 8):
 def callback(request):
     # TODO: This function would be called when linebot was spoken to by user
     # 
-    # 
     # import pdb; pdb.set_trace()
     if request.method == 'POST':
         request_json = json.loads(request.body.decode('utf-8'))
@@ -71,6 +70,8 @@ def parse_message(msg):
         talk_themes = json.load(open("garbage_bot/statics/talks.json"))
         if talk_themes.get(msg):
             garbage_type = "casual_talk"
+    elif "リマインド" in msg:
+        garbage_type = "which_trash_type_to_notify"
     else:
         pass
     return garbage_type
@@ -84,6 +85,12 @@ def choose_response(content_type, text):
     elif content_type == "casual_talk":
         talk_themes = json.loads("./statics/talks.json")
         reply_msg(reply_token, talk_themes[text])
+    elif garbage_type == "which_trash_type_to_notify":
+        # uidごとに過去の会話から、リマインドしたいユーザかを把握、
+        # どのゴミの収集日をリマインドするかをユーザに聞く。
+        # last_message is which_trash_type_to_notify
+        # 3/23: ユーザ対話ログ機能を実装したのち、リマインド機能の実装に入る方がいいかもしれない。
+        reply_msg(reply_token, "ありがとうございますー！またリマインドする機能は実装中です。すまんな")
     else:
         # burnable / non_burnable
         trash_info = get_next_trash_day_of(garbage_type, area_code)
@@ -161,12 +168,12 @@ def push_remind():
     2. QuerySetをuuidごとにまとめ、それぞれのユーザに対してメッセージを送信する。
     """
     today = datetime.date.today()
+    # https://bradmontgomery.net/blog/date-lookups-django/
     QuerySet = Remind.objects.filter(
         when2push__day=today.day,
         when2push__year=today.year,
         when2push__month=today.month,
     )
-    import pdb;pdb.set_trace()
     target_uuids = []
     for q in QuerySet:
         print("Push remind message for ", q.uuid)

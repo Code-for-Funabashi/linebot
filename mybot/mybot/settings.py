@@ -73,11 +73,20 @@ WSGI_APPLICATION = 'mybot.wsgi.application'
 
 # Database
 # https://docs.djangoproject.com/en/3.1/ref/settings/#databases
+import os
+import urllib.parse
 
+urllib.parse.uses_netloc.append("postgres")
+url = urllib.parse.urlparse(os.environ["DATABASE_URL"])
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+        'ENGINE': 'django.db.backends.postgresql',
+        'NAME': url.path[1:],
+        'USER': url.username,
+        'PASSWORD': url.password,
+        'HOST': url.hostname,
+        'PORT': url.port,
+        "DATABASE_URL":os.environ.get('DATABASE_URL'),
     }
 }
 
