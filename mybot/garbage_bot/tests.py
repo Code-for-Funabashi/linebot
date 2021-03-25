@@ -2,6 +2,8 @@ from django.test import TestCase
 from .views import *
 import datetime
 from garbage_bot.models import Remind, GarbageType
+from unittest import mock
+from django.http import HttpResponse
 # Create your tests here.
 
 class Garbage_BotTestCase(TestCase):
@@ -11,7 +13,7 @@ class Garbage_BotTestCase(TestCase):
         self.parameters_type_area = [
         # 日時は各地域ごとに調整していくつか試す。
         # 3/19の段階では、次の燃えるゴミの日は3/23なのでこちらを指定
-            ("burnable", "natsume", f"3月の23日がburnableを捨てる日だよ！時間帯はnightだよ"),
+            ("burnable", "natsume", f"3月の30日がburnableを捨てる日だよ！時間帯はnightだよ"),
             ("non_burnable", "natsume", f"3月の18日がnon_burnableを捨てる日だよ！"), 
         ]
         self.parameters_parse_message = [
@@ -31,7 +33,14 @@ class Garbage_BotTestCase(TestCase):
             # ValueError: Cannot assign "1": "Remind.garbage_type" must be a "GarbageType" instance.
             garbage_type=GarbageType.objects.get(garbage_type=1)
         ).save()
-
+        self.parameters_choose_response = [
+            (("next_ask_trash_type", "hoge"), "ありがとうございますー！何のゴミの収集日を聞きたいですか？"),
+            (("unknown", "hoge"), "ふなっしー？ふなっしーとは付かず離れずの距離を保っていたい"),
+            (("casual_talk", "あ"), "アンデルセン公園、騙されたと思って行ってみて"),
+            (("casual_talk", "い"), "意外に人気あるんだよ"),
+            (("which_trash_type_to_notify", "hoge"), "ありがとうございますー！リマインドする機能は実装中です。すまんな"),
+            
+        ]
     wd2id = {"月": 0 , "火": 1, "水": 2, "木":3, "金":4, "土":5, "日": 6}
 
     # fixtures
@@ -57,3 +66,20 @@ class Garbage_BotTestCase(TestCase):
         for p, expected in self.parameters_parse_message:
             with self.subTest(p=p):
                 self.assertEqual(expected, parse_message(p))
+    
+
+
+    def test_choose_response(self):
+        for (content_type, text), expected \
+            in self.parameters_choose_response:
+            with self.subTest(content_type=content_type, text=text):
+                self.assertEqual(
+                    expected, 
+                    choose_response(content_type, text)
+                    )
+    def test_get_trash_info_area_of(self):
+        # return values type check
+        actual = type(get_trash_info_area_of(area="natsume"))
+        self.assertEqual(dict, actual)
+
+        

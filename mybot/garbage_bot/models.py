@@ -29,7 +29,7 @@ class GarbageType(models.Model):
     #   - garbage_type
     #   - garbage_name
     garbage_type = models.IntegerField(primary_key=True)
-    garbage_name = models.CharField(max_length=10, null=False)
+    garbage_name = models.CharField(max_length=20, null=False)
 
 
 class CollectDay(models.Model):

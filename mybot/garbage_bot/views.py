@@ -7,7 +7,7 @@ import requests
 import datetime
 # Create your views here.
 
-from garbage_bot.models import Remind
+from garbage_bot.models import Remind, Area
 
 
 LINE_CHANNEL_SECRET = os.environ["LINE_CHANNEL_SECRET"]
@@ -36,7 +36,6 @@ def callback(request):
         request_json = json.loads(request.body.decode('utf-8'))
         # リクエストが空でないことを確認
         if(request_json != None):
-
             # イベントの取得
             # import pdb;pdb.set_trace()
             for event in request_json['events']:
@@ -47,55 +46,53 @@ def callback(request):
                 if message_type == 'text':
                     text = event['message']['text']
                     content_type = parse_message(text)
-
                     # 応答 bot を呼ぶ
-                    choose_response(content_type, text)
+                    reply = choose_response(content_type, text)
+                    # make a request.
+                    reply_msg(reply_token, reply)
                     # reply += tool.reply_text(reply_token, text)
-        return HttpResponse(status=200)
-
-
+    return HttpResponse(reply, status=200)
 
 def parse_message(msg):
     # TODO: 燃えるゴミ・燃えないゴミの日を通知する。
     # NLP技術用いていずれ高度化する
-    garbage_type = "unknown"
+    content_type = "unknown"
     
     if "燃える" in msg:
-        garbage_type = "burnable"
+        content_type = "burnable"
     elif "燃えない" in msg:
-        garbage_type = "non_burnable"
+        content_type = "non_burnable"
     elif "ゴミ" in msg and re.findall(r"捨てたい|？", msg):
-        garbage_type = "next_ask_trash_type"
+        content_type = "next_ask_trash_type"
     elif len(msg) == 1:
         talk_themes = json.load(open("garbage_bot/statics/talks.json"))
         if talk_themes.get(msg):
-            garbage_type = "casual_talk"
+            content_type = "casual_talk"
     elif "リマインド" in msg:
-        garbage_type = "which_trash_type_to_notify"
+        content_type = "which_trash_type_to_notify"
     else:
         pass
-    return garbage_type
-
+    return content_type
 
 def choose_response(content_type, text):
     if content_type == "next_ask_trash_type":
-        reply_msg(reply_token, "ありがとうございますー！何のゴミの収集日を聞きたいですか？")
+        reply = "ありがとうございますー！何のゴミの収集日を聞きたいですか？"
     elif content_type == "unknown":
-        reply_msg(reply_token, "ふなっしー？ふなっしーとは付かず離れずの距離を保っていたい")
+        reply = "ふなっしー？ふなっしーとは付かず離れずの距離を保っていたい"
     elif content_type == "casual_talk":
-        talk_themes = json.loads("./statics/talks.json")
-        reply_msg(reply_token, talk_themes[text])
-    elif garbage_type == "which_trash_type_to_notify":
+        talk_themes = json.load(open("garbage_bot/statics/talks.json"))
+        reply = talk_themes[text]
+    elif content_type == "which_trash_type_to_notify":
         # uidごとに過去の会話から、リマインドしたいユーザかを把握、
         # どのゴミの収集日をリマインドするかをユーザに聞く。
         # last_message is which_trash_type_to_notify
         # 3/23: ユーザ対話ログ機能を実装したのち、リマインド機能の実装に入る方がいいかもしれない。
-        reply_msg(reply_token, "ありがとうございますー！またリマインドする機能は実装中です。すまんな")
+        reply = "ありがとうございますー！リマインドする機能は実装中です。すまんな"
     else:
         # burnable / non_burnable
         trash_info = get_next_trash_day_of(garbage_type, area_code)
-        reply_msg(reply_token, trash_info)
-
+        reply = trash_info
+    return reply
 
 def get_next_trash_day_of(garbage_type, area_code):
     
@@ -145,7 +142,6 @@ def get_trash_info_area_of(area) -> dict:
     #   {3}: day or night (or no information if blank)
     sample_natsume = {"burnable":"-1/1,2/night",
                     "non_burnable":"3/3/",  "Resources・PET" : "-1/2/", "valuables" : "-1/2/"}
-    # 
     return sample_natsume
 
 
