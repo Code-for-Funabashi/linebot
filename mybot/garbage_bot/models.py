@@ -51,3 +51,19 @@ class Remind(models.Model):
     uuid = models.CharField(max_length=64, null=False)
     when2push = models.DateField(auto_now=True)
     garbage_type = models.ForeignKey(GarbageType, on_delete=models.CASCADE)
+
+
+# 
+# class UserRecentHistory(models.Model):
+#     uuid = models.CharField(max_length=64, null=False)
+#     created_at = models.DateTimeField(auto_now=True)
+#     updated_at = models.DateTimeField(auto_now=True)
+
+class Context(models.Model):
+    session_id = models.CharField(max_length=64, null=False)
+    state = models.IntegerField() # 各セッション毎に、どこまでユーザとの会話が進んでいるか？
+    where = models.CharField(max_length=xxx, null=False)
+    garbage_type = models.CharField(max_length=yyy, null=False)
+    uuid = models.CharField(max_length=64, null=False)
+    created_at = models.DateTimeField(auto_now=True)
+    updated_at = models.DateTimeField(auto_now=True)

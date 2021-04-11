@@ -53,26 +53,73 @@ def callback(request):
                     # reply += tool.reply_text(reply_token, text)
     return HttpResponse(reply, status=200)
 
+
+from models import Context
+
+# 過去のお話を踏まえて、話す内容決める
+def manage_context(user_id):
+
+    # return 
+    #   next_method: 次に利用する関数を返す？
+    QuerySet = Context.objects.get_or_none(uuid=user_id)
+    status = QuerySet.latest().status
+    if status == 0:
+        pass
+    # 1文字遊びしてきた
+    elif status == 1:
+        pass
+    # ゴミ収集日を聞いてきた
+    elif status == 2:
+        # check whether context has "where" and "what"
+        # 
+        # CODE HERE!
+        # ask_what()
+        # ask_where()
+        pass
+    # ゴミリマインドをお願いしてきた
+    elif status == 3:
+        # check whether context has "where" and "what"
+        # 
+        # CODE HERE!
+        # ask_what()
+        # ask_where()
+        pass
+    # やりとり終わったで or やりとりの途中で一日経っちゃったよ笑
+    elif status == 4:
+        pass
+
+# status == None(新規ユーザ)の場合、新しいセッションを発行する
+# status == 4の場合、新しいセッションを発行する
+# 今発話された内容を精査する
 def parse_message(msg):
     # TODO: 燃えるゴミ・燃えないゴミの日を通知する。
-    # NLP技術用いていずれ高度化する
-    content_type = "unknown"
+    # 
+    # return: 
+    #   content_type: 次の状態を返す
+    content_type = 0
     
-    if "燃える" in msg:
-        content_type = "burnable"
-    elif "燃えない" in msg:
-        content_type = "non_burnable"
-    elif "ゴミ" in msg and re.findall(r"捨てたい|？", msg):
-        content_type = "next_ask_trash_type"
+    if "ゴミ" in msg and re.findall(r"捨てたい|？", msg):
+        content_type = 2
     elif len(msg) == 1:
         talk_themes = json.load(open("garbage_bot/statics/talks.json"))
         if talk_themes.get(msg):
-            content_type = "casual_talk"
+            content_type = 1
     elif "リマインド" in msg:
-        content_type = "which_trash_type_to_notify"
+        content_type = 3
     else:
         pass
     return content_type
+
+
+# status == 2の場合、ask_what()/ask_where()/get_day_to_collect()
+# status == 3の場合、ask_what()/ask_where()/get_day_to_collect()
+def ask_what():
+    pass
+def ask_where():
+    pass
+def get_day_to_collect():
+    pass
+
 
 def choose_response(content_type, text):
     if content_type == "next_ask_trash_type":
