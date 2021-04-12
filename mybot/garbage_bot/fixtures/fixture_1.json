@@ -64,6 +64,43 @@
         "nth_week": -1,
         "day_or_night": 1 
       }
+    },
+    { 
+      "model": "garbage_bot.context",
+      "fields": {
+        "session_id": "test_session0",
+        "state": 10,
+        "garbage_type": -1,
+        "area_id": -2,
+        "uuid": "test_case:manage_context",
+        "created_at": "2021-03-12T15:57:00.524",
+        "updated_at": "2021-03-12T17:57:00.524"
+      }
+    },
+    { 
+      "model": "garbage_bot.context",
+      "fields": {
+        "session_id": "test_session1",
+        "state": 21,
+        "garbage_type": -1,
+        "area_id": -1,
+        "uuid": "test_case:manage_context",
+        "created_at": "2021-03-12T15:57:00.524",
+        "updated_at": "2021-03-13T17:57:00.524"
+      }
+    },
+    { 
+      "model": "garbage_bot.context",
+      "fields": {
+        "session_id": "test_session1",
+        "state": 22,
+        "garbage_type": -1,
+        "area_id": -2,
+        "uuid": "test_case:manage_context",
+        "created_at": "2021-03-12T15:57:00.524",
+        "updated_at": "2021-03-13T17:58:00.524"
+      }
     }
+
        
 ]

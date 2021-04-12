@@ -55,7 +55,10 @@ class Garbage_BotTestCase(TestCase):
     #     context: Context = qs.latest()
     #     ask_what(context)
     #     pass
-
+    def test_manage_context(self):
+        user_id = "test_case:manage_context"
+        # manage_context(user_id)
+        pass
 
     def test_get_day_to_collect(self):
         # import pdb;pdb.set_trace()

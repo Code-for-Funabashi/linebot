@@ -75,10 +75,10 @@ def manage_context(user_id):
     if status == 0:
         pass
     # 1文字遊びしてきた
-    elif status == 10:
+    elif status // 10 == 1:
         pass
     # ゴミ収集日を聞いてきた
-    elif status == 20:
+    elif status // 10 == 2:
         # check whether context has "where" and "what"
         # if where to collect is known is status == 20
         # if where to collect is known and what to collect is not known is status == 24
@@ -87,6 +87,8 @@ def manage_context(user_id):
         # どこの地域なのか？
         # 21: ask_where聞き終わり
         # with 21 + msg:町名を答えてもらった -> 22
+        # TODO: data構造（area_idも下2桁で詳細地区、それ以外で町名情報保持、とかにした方がいいな。）
+        
         # 22: n丁目なのか答えてもらう
         # with 22 + msg:n丁目を答えてもらった -> 23: DONE
         ask_where(context)

@@ -23,6 +23,8 @@ services:
       - .env
 
     stdin_open: true
+    # よく分からないのであとで勉強する
+    # https://qiita.com/NagaokaKenichi/items/7b66c58fda36b46f5938
     # tty: true
     depends_on:
       - db
