@@ -70,23 +70,35 @@ def manage_context(user_id):
 
     # return 
     #   next_method: 次に利用する関数を返す？
-    QuerySet = Context.objects.get_or_none(uuid=user_id)
-    status = QuerySet.latest().status
+    context: Context = Context.objects.filter(uuid=user_id).latest()
+    status = context.status
     if status == 0:
         pass
     # 1文字遊びしてきた
-    elif status == 1:
+    elif status == 10:
         pass
     # ゴミ収集日を聞いてきた
-    elif status == 2:
+    elif status == 20:
         # check whether context has "where" and "what"
-        # 
+        # if where to collect is known is status == 20
+        # if where to collect is known and what to collect is not known is status == 24
+
         # CODE HERE!
+        # どこの地域なのか？
+        # 21: ask_where聞き終わり
+        # with 21 + msg:町名を答えてもらった -> 22
+        # 22: n丁目なのか答えてもらう
+        # with 22 + msg:n丁目を答えてもらった -> 23: DONE
+        ask_where(context)
         # ask_what()
-        # ask_where()
+        # 何捨てたいのか聞く
+        ask_what()
+        # with 24 + msg:garbage_typeを答えてもらった -> 25
+        get_day_to_collect(context)
+            
         pass
     # ゴミリマインドをお願いしてきた
-    elif status == 3:
+    elif status == 30:
         # check whether context has "where" and "what"
         # 
         # CODE HERE!
@@ -94,7 +106,7 @@ def manage_context(user_id):
         # ask_where()
         pass
     # やりとり終わったで or やりとりの途中で一日経っちゃったよ笑
-    elif status == 4:
+    elif status == 40:
         pass
 
 # status == None(新規ユーザ)の場合、新しいセッションを発行する
@@ -137,7 +149,7 @@ def ask_where():
     # quick replies
     pass
 def get_day_to_collect(context):
-
+    # trash_collection_days.xlsxの各行の情報がとって来れればいい状態:
     garbage_type = context.garbage_type
     area_id = context.area_id
     ret_message = get_next_trash_day_of(garbage_type, area_id)
@@ -155,7 +167,7 @@ def get_next_trash_day_of(garbage_type, area_code):
     nthWeek, weekdays, day_or_night = get_trash_info_area_of(garbage_type, area_code)
     
     print(nthWeek, weekdays, day_or_night)
-    
+
     day_or_night = "昼" if day_or_night == 1 else "夜"
     import calendar
     weekdays = [int(wd) for wd in weekdays.split(",")]
