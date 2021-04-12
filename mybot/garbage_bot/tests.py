@@ -1,13 +1,14 @@
 from django.test import TestCase
 from .views import *
 import datetime
-from garbage_bot.models import Remind, GarbageType
+from garbage_bot.models import Remind, GarbageType, Context
 from unittest import mock
 from django.http import HttpResponse
 # Create your tests here.
+from django.core.exceptions import ObjectDoesNotExist
 
 class Garbage_BotTestCase(TestCase):
-    fixtures = ["garbage_bot/fixtures/fixture_1.json"]
+    fixtures = ["garbage_bot/fixtures/fixture_1.json", "garbage_bot/fixtures/uuid_inclusion.json"]
     def setUp(self):
         # garbage_type, area_code, expected
         self.parameters_type_area = [
@@ -41,45 +42,78 @@ class Garbage_BotTestCase(TestCase):
             (("which_trash_type_to_notify", "hoge"), "ありがとうございますー！リマインドする機能は実装中です。すまんな"),
             
         ]
+        self.parameters_casual_talks = [
+            ("あ", "アンデルセン公園、騙されたと思って行ってみて"),
+            ("い", "意外に人気あるんだよ"),
+            ("ん", "自分何いうてんねん")
+        ]
     wd2id = {"月": 0 , "火": 1, "水": 2, "木":3, "金":4, "土":5, "日": 6}
 
-    # fixtures
+    # def test_ask_what(self):
+    #     user_id = os.environ["LINE_TEST_UID"]
+    #     qs = Context.objects.get_or_none(uuid=user_id)
+    #     context: Context = qs.latest()
+    #     ask_what(context)
+    #     pass
+
+
+    def test_get_day_to_collect(self):
+        # import pdb;pdb.set_trace()
+        # TODO: utc問題解消しておく
+        expected = "4月の12日がburnableを捨てる日だよ！時間帯は昼だよ"
+        user_id = os.environ["LINE_TEST_UID"]
+        try:
+            context: Context = Context.objects.filter(uuid=user_id).latest()
+            actual = get_day_to_collect(context)
+        except ObjectDoesNotExist:
+            actual = None
+        
+        self.assertEqual(
+            expected, 
+            actual    
+            )
 
 
     # End
 
-    def test_get_next_trash_day_of(self):
-        # garbage_type, area_code
-        for garbage_type, area_code, expected in self.parameters_type_area:
-            with self.subTest():
-                self.assertEqual(
-                    expected, 
-                    get_next_trash_day_of(garbage_type, area_code)
-                    )
+    # def test_get_next_trash_day_of(self):
+    #     # garbage_type, area_code
+    #     for garbage_type, area_code, expected in self.parameters_type_area:
+    #         with self.subTest():
+    #             self.assertEqual(
+    #                 expected, 
+    #                 get_next_trash_day_of(garbage_type, area_code)
+    #                 )
 
-    def test_push_remind(self):
-        target_uuids = push_remind()
-        self.assertEqual(target_uuids, [os.environ["LINE_TEST_UID"]])
-        # when2push
-
-    def test_parse_message(self):
-        for p, expected in self.parameters_parse_message:
+    def test_get_one_message(self):
+        for p, expected in self.parameters_casual_talks:
             with self.subTest(p=p):
-                self.assertEqual(expected, parse_message(p))
+                self.assertEqual(expected, get_one_message(p))
+
+
+    # def test_push_remind(self):
+    #     target_uuids = push_remind()
+    #     self.assertEqual(target_uuids, [os.environ["LINE_TEST_UID"]])
+    #     # when2push
+
+    # def test_parse_message(self):
+    #     for p, expected in self.parameters_parse_message:
+    #         with self.subTest(p=p):
+    #             self.assertEqual(expected, parse_message(p))
     
 
 
-    def test_choose_response(self):
-        for (content_type, text), expected \
-            in self.parameters_choose_response:
-            with self.subTest(content_type=content_type, text=text):
-                self.assertEqual(
-                    expected, 
-                    choose_response(content_type, text)
-                    )
-    def test_get_trash_info_area_of(self):
-        # return values type check
-        actual = type(get_trash_info_area_of(area="natsume"))
-        self.assertEqual(dict, actual)
+    # def test_choose_response(self):
+    #     for (content_type, text), expected \
+    #         in self.parameters_choose_response:
+    #         with self.subTest(content_type=content_type, text=text):
+    #             self.assertEqual(
+    #                 expected, 
+    #                 choose_response(content_type, text)
+    #                 )
+    # def test_get_trash_info_area_of(self):
+    #     # return values type check
+    #     actual = type(get_trash_info_area_of(area="natsume"))
+    #     self.assertEqual(dict, actual)
 
         

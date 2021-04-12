@@ -7,7 +7,7 @@ import requests
 import datetime
 # Create your views here.
 
-from garbage_bot.models import Remind, Area
+from garbage_bot.models import Remind, Area, CollectDay, Context
 
 
 LINE_CHANNEL_SECRET = os.environ["LINE_CHANNEL_SECRET"]
@@ -43,9 +43,19 @@ def callback(request):
                 reply_token = event['replyToken']
                 message_type = event['message']['type']
 
+                # 1. Extract UID
+                # 2. Get the latest context
+                # manage_context
+
                 if message_type == 'text':
                     text = event['message']['text']
+
+                    # 3. parse_message
                     content_type = parse_message(text)
+
+
+                    # context
+
                     # 応答 bot を呼ぶ
                     reply = choose_response(content_type, text)
                     # make a request.
@@ -54,7 +64,6 @@ def callback(request):
     return HttpResponse(reply, status=200)
 
 
-from models import Context
 
 # 過去のお話を踏まえて、話す内容決める
 def manage_context(user_id):
@@ -110,15 +119,64 @@ def parse_message(msg):
         pass
     return content_type
 
+# status == 1の場合、
+def get_one_message(msg):
+    talk_themes = json.load(open("garbage_bot/statics/talks.json"))
+    if talk_themes.get(msg):
+        return talk_themes[msg]
+    else:
+        return "自分何いうてんねん"
 
 # status == 2の場合、ask_what()/ask_where()/get_day_to_collect()
 # status == 3の場合、ask_what()/ask_where()/get_day_to_collect()
-def ask_what():
+def ask_what(context):
+    # quick replies
     pass
+
 def ask_where():
+    # quick replies
     pass
-def get_day_to_collect():
-    pass
+def get_day_to_collect(context):
+
+    garbage_type = context.garbage_type
+    area_id = context.area_id
+    ret_message = get_next_trash_day_of(garbage_type, area_id)
+    return ret_message
+
+def get_next_trash_day_of(garbage_type, area_code):
+    
+    # TODO: dayOfWeekから次の{garbage_type}のゴミの日を計算してくれるmethod
+    # areaの指定
+    # area = "夏見5～7丁目"
+    # >>> get_trash_info_area_of(area)
+    # The information is retrieved from the below site.
+    # "https://www.city.funabashi.lg.jp/kurashi/gomi/001/p001523.html"
+    # 
+    nthWeek, weekdays, day_or_night = get_trash_info_area_of(garbage_type, area_code)
+    
+    print(nthWeek, weekdays, day_or_night)
+    
+    day_or_night = "昼" if day_or_night == 1 else "夜"
+    import calendar
+    weekdays = [int(wd) for wd in weekdays.split(",")]
+    first_target_weekday = list(filter(lambda x: x[1] in weekdays, first_weekdays))
+
+    if len(first_target_weekday) == 1:
+        # get day first_target_weekday[0][0]
+        # 対象となる第{nthWeek}{day}曜日 (nthWeek - 1) * 7
+        target_day = first_target_weekday[0][0] + (nthWeek - 1) * 7
+    elif len(first_target_weekday) >= 2: 
+        # 可燃ごみ
+        # import pdb; pdb.set_trace()
+        if nthWeek == -1:# every week garbages are collected.
+            first_days = [fwd[0] for fwd in first_target_weekday]
+            candidate_days = [fd + (nthWeek_ - 1) * 7 for fd in first_days for nthWeek_ in range(1, 6)
+                     if fd + (nthWeek_ - 1) * 7 < 32]
+            # next dayを見つける
+            target_day = min(filter(lambda x: x >= curr_day, candidate_days))
+    else:
+        return "ちょっとわからんかったわ"
+    return f"{curr_month}月の{target_day}日が{garbage_type}を捨てる日だよ！{'時間帯は' + day_or_night + 'だよ' if day_or_night else '' }"
 
 
 def choose_response(content_type, text):
@@ -141,44 +199,9 @@ def choose_response(content_type, text):
         reply = trash_info
     return reply
 
-def get_next_trash_day_of(garbage_type, area_code):
-    
-    # TODO: dayOfWeekから次の{garbage_type}のゴミの日を計算してくれるmethod
-    # areaの指定
-    # area = "夏見5～7丁目"
-    # >>> get_trash_info_area_of(area)
-    # The information is retrieved from the below site.
-    # "https://www.city.funabashi.lg.jp/kurashi/gomi/001/p001523.html"
-    # 
-    trash_info = get_trash_info_area_of(area_code)
-    # get 
-    when2collect = trash_info[garbage_type]
-    import calendar
-    nthWeek, weekdays, day_or_night= when2collect.split("/")
-    weekdays = [int(wd) for wd in weekdays.split(",")]
-    nthWeek = int(nthWeek)
-    first_target_weekday = list(filter(lambda x: x[1] in weekdays, first_weekdays))
-
-    if len(first_target_weekday) == 1:
-        # get day first_target_weekday[0][0]
-        # 対象となる第{nthWeek}{day}曜日 (nthWeek - 1) * 7
-        target_day = first_target_weekday[0][0] + (nthWeek - 1) * 7
-    elif len(first_target_weekday) >= 2: 
-        # 可燃ごみ
-        # import pdb; pdb.set_trace()
-        if nthWeek == -1:# every week garbages are collected.
-            first_days = [fwd[0] for fwd in first_target_weekday]
-            candidate_days = [fd + (nthWeek_ - 1) * 7 for fd in first_days for nthWeek_ in range(1, 6)
-                     if fd + (nthWeek_ - 1) * 7 < 32]
-            # next dayを見つける
-            target_day = min(filter(lambda x: x >= curr_day, candidate_days))
-    else:
-        return "ちょっとわからんかったわ"
-    return f"{curr_month}月の{target_day}日が{garbage_type}を捨てる日だよ！{'時間帯は' + day_or_night + 'だよ' if day_or_night else '' }"
 
 
-
-def get_trash_info_area_of(area) -> dict:
+def get_trash_info_area_of(garbage_type, area_id) -> tuple:
     # TODO: get data from area_trash_days table
     # we have to retrieve info like the sample_natsume 
     # "mon":0, "tue":1, "wed":2, "thu":3, "fri":4, "sat":5, "sun":6
@@ -187,9 +210,14 @@ def get_trash_info_area_of(area) -> dict:
     #   {1}: n-th week or every week (-1)
     #   {2}: weekdays
     #   {3}: day or night (or no information if blank)
-    sample_natsume = {"burnable":"-1/1,2/night",
-                    "non_burnable":"3/3/",  "Resources・PET" : "-1/2/", "valuables" : "-1/2/"}
-    return sample_natsume
+    
+    # garbage_type, area_idから収集日情報を取得
+    collect_day:CollectDay = CollectDay.objects.get(garbage_type=garbage_type, area_id=area_id)
+    nthWeek: int = collect_day.nth_week
+    weekdays: str = collect_day.weekday_info
+    day_or_night: int = collect_day.day_or_night
+
+    return nthWeek, weekdays, day_or_night
 
 
 
