@@ -27,7 +27,7 @@ jobs:
           UID_INCLUDED_JSON_FILE: ${{ secrets.UID_INCLUDED_JSON_FILE }}
         run: |
           cd ./mybot
-          echo ""  > .env
+          echo $LINE_TEST_UID\n$LINE_ACCESS_TOKEN\n$LINE_CHANNEL_SECRET\nUID_INCLUDED_JSON_FILE > .env
           cat $UID_INCLUDED_JSON_FILE > garbage_bot/fixtures/uuid_inclusion.json
           docker-compose up -d
           docker-compose exec web python manage.py migrate
