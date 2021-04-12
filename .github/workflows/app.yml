@@ -22,9 +22,13 @@ jobs:
         shell: bash
         env:
           LINE_TEST_UID: ${{ secrets.LINE_TEST_UID }}
-#           ENVENV2: ${{ secrets.ENVENV2 }}
+          LINE_ACCESS_TOKEN: ${{ secrets.LINE_ACCESS_TOKEN }}
+          LINE_CHANNEL_SECRET: ${{ secrets.LINE_CHANNEL_SECRET }}
+          UID_INCLUDED_JSON_FILE: ${{ secrets.UID_INCLUDED_JSON_FILE }}
         run: |
           cd ./mybot
+          echo ""  > .env
+          cat $UID_INCLUDED_JSON_FILE > garbage_bot/fixtures/uuid_inclusion.json
           docker-compose up -d
           docker-compose exec web python manage.py migrate
           docker-compose exec web python manage.py test
