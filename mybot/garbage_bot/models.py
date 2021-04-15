@@ -18,9 +18,10 @@ class Area(models.Model):
 
     #   - area_detail: 番地詳細
     area_id = models.IntegerField(primary_key=True)
-    area_name = models.CharField(max_length=15, null=True)
-    area_name_capital = models.CharField(max_length=2, null=False)
-    area_detail = models.CharField(max_length=30, null=False)
+    # 
+    town_name = models.CharField(max_length=15, null=True)
+    district_name = models.CharField(max_length=15, null=True)
+    address_name = models.CharField(max_length=15, null=True)
 
 class GarbageType(models.Model):
     # TODO: develop the data model.
@@ -66,7 +67,10 @@ class Context(models.Model):
     session_id = models.CharField(max_length=64, null=False)
     state = models.IntegerField() # 各セッション毎に、どこまでユーザとの会話が進んでいるか？
     
-    area_id = models.ForeignKey(Area, on_delete=models.CASCADE)
+    # area_id = models.ForeignKey(Area, on_delete=models.CASCADE)
+    town_name = models.CharField(max_length=64, null=False)
+    district_name = models.CharField(max_length=64, null=False)
+    area_candidates = models.JSONField()
     garbage_type = models.ForeignKey(GarbageType, on_delete=models.CASCADE)
 
     uuid = models.CharField(max_length=64, null=False)
