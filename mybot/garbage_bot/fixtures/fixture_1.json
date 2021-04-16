@@ -43,6 +43,14 @@
         "garbage_name": "resources"
       }
     },
+    {
+      "model": "garbage_bot.garbagetype",
+      
+      "fields": {
+        "garbage_type": 4,
+        "garbage_name": "valuables"
+      }
+    },
     { 
       "model": "garbage_bot.collectday",
       

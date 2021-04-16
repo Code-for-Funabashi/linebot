@@ -3,17 +3,22 @@ from django.apps import AppConfig
 from django.db.models.signals import post_migrate
 from django.utils.translation import gettext_lazy as _
 
-
+from .utils import get_json
 
 class GarbageBotConfig(AppConfig):
     name = 'garbage_bot'
     def ready(self):
-        post_migrate.connect(setup_dummy_social_apps, sender=self)
+        post_migrate.connect(setup_data, sender=self)
+
+def make_area_records(row):
+    return Area(
+        address_name=row["address_name"],
+        district_name=row["district_name"],
+        town_name=row["town_name"]
+        )
 
 
-
-
-def setup_Location_data(sender, **kwargs):
+def setup_data(sender, **kwargs):
     """
     django appをサーバに立ち上げるタイミングで船橋のゴミ収集情報をDBに立ち上げる
     """
@@ -21,23 +26,21 @@ def setup_Location_data(sender, **kwargs):
     import pandas as pd
     from models import Area
 
-    site = Site.objects.get_current()
-    # 
-    area_name = df["町名.1"]
-    area_name_capital = df["町名"]
-    area_detail = df["番地詳細"]
-    # df.apply(lambda row: )
-    Area.objects.create(
-        area_name=area_name,
-        area_name_capital=area_name_capital,
-        area_detail=area_detail,
-    )
-    # bulk_createを用いる。
-    
+    # Area creation.
+    area_df = pd.read_csv("../area_df.csv")
+    area_objects = area_df.apply(make_area_records, axis=1).to_list()
+    Area.objects.bulk_create(area_objects)
+    # bulk_createで一括saveできるのか検証中
 
-    # app = SocialApp.objects.create(
-    #     provider=provider.id,
-    #     secret='secret',
-    #     client_id='client-id',
-    #     name='Dummy %s app' % provider.id)
-    app.sites.add(site)
+    # GarbageType creation.
+    GarbageTypeList = ["burnable",
+                    "non_burnable",
+                    "resources",
+                    "valuables",]
+    GarbageType.objects.bulk_create([GarbageType(garbage_type=idx, garbage_name=type_)
+                                        for idx, type_ in enumerate(GarbageTypeList)])
+
+    # CollectDay creation.
+    obj_list = sample_df.apply(get_json, axis=1).sum()
+    CollectDay.objects.bulk_create([CollectDay(obj) for obj in obj_list])
+
