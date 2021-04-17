@@ -27,24 +27,9 @@ jobs:
           # UID_INCLUDED_JSON_FILE: ${{ secrets.UID_INCLUDED_JSON_FILE }}
         run: |
           cd ./mybot
-          echo $LINE_TEST_UID\n$LINE_ACCESS_TOKEN\n$LINE_CHANNEL_SECRET\nUID_INCLUDED_JSON_FILE > .env
-          cat << EOF > garbage_bot/fixtures/uuid_inclusion.json
-          [
-            { 
-                "model": "garbage_bot.context",
-                "fields": {
-                  "session_id": "test_session",
-                  "state": 2,
-                  "garbage_type": 1,
-                  "area_id": 2,
-                  "uuid": $LINE_TEST_UID,
-                  "created_at": "2021-04-12T15:57:00.524",
-                  "updated_at": "2021-04-12T17:57:00.524"
-                }
-              }
-            
-          ]
-          EOF
+          echo LINE_TEST_UID=$LINE_TEST_UID\nLINE_ACCESS_TOKEN=$LINE_ACCESS_TOKEN\nLINE_CHANNEL_SECRET=$LINE_CHANNEL_SECRET\nUID_INCLUDED_JSON_FILE=$UID_INCLUDED_JSON_FILE > .env
+          echo $LINE_TEST_UID\n$LINE_ACCESS_TOKEN\n$LINE_CHANNEL_SECRET\nUID_INCLUDED_JSON_FILE
           docker-compose up -d
-          docker-compose exec web python manage.py migrate
-          docker-compose exec web python manage.py test
+          docker-compose exec -T web python manage.py makemigrations
+          docker-compose exec -T web python manage.py migrate
+          docker-compose exec -T web python manage.py test

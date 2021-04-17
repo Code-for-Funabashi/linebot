@@ -8,7 +8,9 @@ from django.http import HttpResponse
 from django.core.exceptions import ObjectDoesNotExist
 
 class Garbage_BotTestCase(TestCase):
-    fixtures = ["garbage_bot/fixtures/fixture_1.json", "garbage_bot/fixtures/uuid_inclusion.json"]
+    fixtures = ["garbage_bot/fixtures/fixture_1.json", 
+    # "garbage_bot/fixtures/uuid_inclusion.json"
+    ]
     def setUp(self):
         # garbage_type, area_code, expected
         self.parameters_type_area = [
@@ -49,12 +51,20 @@ class Garbage_BotTestCase(TestCase):
         ]
     wd2id = {"月": 0 , "火": 1, "水": 2, "木":3, "金":4, "土":5, "日": 6}
 
-    # def test_ask_what(self):
-    #     user_id = os.environ["LINE_TEST_UID"]
-    #     qs = Context.objects.get_or_none(uuid=user_id)
-    #     context: Context = qs.latest()
-    #     ask_what(context)
-    #     pass
+    def test_ask_what(self):
+        user_id = "test_case:ask_what"
+        context: Context = Context.objects.filter(uuid=user_id).latest()
+        actual = ask_what(context)
+        # TODO: expected作成
+        # 4.17 モデルの更新をfixtureに反映させる。
+        expected = "ちょっと分からん買ったわ。もう一度答えてくれ.\n\
+            可燃ゴミ / 不燃ゴミ / 資源ゴミ / 有価物の中から選んでね！"
+        # expected = f"{curr_month}月の{target_day}日が{garbage_type}を捨てる日だよ！{'時間帯は' + day_or_night + 'だよ' if day_or_night else '' }"
+        self.assertEqual(
+            expected, 
+            actual    
+            )
+
     def test_manage_context(self):
         user_id = "test_case:manage_context"
         # manage_context(user_id)
@@ -118,5 +128,3 @@ class Garbage_BotTestCase(TestCase):
     #     # return values type check
     #     actual = type(get_trash_info_area_of(area="natsume"))
     #     self.assertEqual(dict, actual)
-
-        

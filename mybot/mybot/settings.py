@@ -37,7 +37,8 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    "garbage_bot"
+    "garbage_bot.apps.GarbageBotConfig",
+    'django.contrib.sites',
 ]
 
 MIDDLEWARE = [
@@ -131,3 +132,5 @@ STATIC_URL = '/static/'
 
 
 CSRF_COOKIE_SECURE = True
+
+SITE_ID = 1

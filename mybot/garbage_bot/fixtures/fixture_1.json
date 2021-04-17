@@ -6,7 +6,7 @@
         "area_id": 1,
         "area_name_capital": "あ",
         "area_name": "旭町1丁目",
-        "area_detail": "None"  
+        "area_detail": "none"
       }
     },
     {
@@ -41,6 +41,14 @@
       "fields": {
         "garbage_type": 3,
         "garbage_name": "resources"
+      }
+    },
+    {
+      "model": "garbage_bot.garbagetype",
+      
+      "fields": {
+        "garbage_type": 4,
+        "garbage_name": "valuables"
       }
     },
     { 
@@ -100,7 +108,24 @@
         "created_at": "2021-03-12T15:57:00.524",
         "updated_at": "2021-03-13T17:58:00.524"
       }
+    },
+    { 
+      "model": "garbage_bot.context",
+      "fields": {
+        "session_id": "test_session1",
+        "state": 24,
+        "garbage_type": -1,
+        "area_candidates": {
+          "town_name":"旭町",
+          "district_name":"1丁目",
+          "address_name":"none"
+        },
+        "uuid": "test_case:ask_what",
+        "created_at": "2021-03-12T15:57:00.524",
+        "updated_at": "2021-03-13T17:58:00.524"
+      }
     }
+
 
        
 ]
