@@ -27,7 +27,8 @@ jobs:
           # UID_INCLUDED_JSON_FILE: ${{ secrets.UID_INCLUDED_JSON_FILE }}
         run: |
           cd ./mybot
-          echo $LINE_TEST_UID\n$LINE_ACCESS_TOKEN\n$LINE_CHANNEL_SECRET\nUID_INCLUDED_JSON_FILE > .env
+          echo LINE_TEST_UID=$LINE_TEST_UID\nLINE_ACCESS_TOKEN=$LINE_ACCESS_TOKEN\nLINE_CHANNEL_SECRET=$LINE_CHANNEL_SECRET\nUID_INCLUDED_JSON_FILE=$UID_INCLUDED_JSON_FILE > .env
+          echo $LINE_TEST_UID\n$LINE_ACCESS_TOKEN\n$LINE_CHANNEL_SECRET\nUID_INCLUDED_JSON_FILE
           docker-compose up -d
           docker-compose exec -T web python manage.py makemigrations
           docker-compose exec -T web python manage.py migrate
