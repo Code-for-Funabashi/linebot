@@ -27,7 +27,7 @@ def setup_data(sender, **kwargs):
     from models import Area
 
     # Area creation.
-    area_df = pd.read_csv("../area_df.csv")
+    area_df = pd.read_csv("/code/area_df.csv")
     area_objects = area_df.apply(make_area_records, axis=1).to_list()
     Area.objects.bulk_create(area_objects)
     # bulk_createで一括saveできるのか検証中
@@ -41,6 +41,7 @@ def setup_data(sender, **kwargs):
                                         for idx, type_ in enumerate(GarbageTypeList)])
 
     # CollectDay creation.
+    sample_df = pd.read_csv("/code/sample_df.csv")
     obj_list = sample_df.apply(get_json, axis=1).sum()
     CollectDay.objects.bulk_create([CollectDay(obj) for obj in obj_list])
 
