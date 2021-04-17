@@ -1,4 +1,4 @@
-
+from django.db import models
 
 def get_json(row):
     out_list = []
@@ -39,5 +39,14 @@ def get_json(row):
             # "district_info": "none" if district_info else district_info
         })
     return out_list
+
+
+# def get_context_or_none(Model: models.Model, user_id):
+
+#     try:
+#         context: Context = Context.objects.filter(uuid=user_id).latest()
+#         actual = get_day_to_collect(context)
+#     except ObjectDoesNotExist:
+#         actual = None
 
 
