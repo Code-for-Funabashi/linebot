@@ -8,7 +8,9 @@ from django.http import HttpResponse
 from django.core.exceptions import ObjectDoesNotExist
 
 class Garbage_BotTestCase(TestCase):
-    fixtures = ["garbage_bot/fixtures/fixture_1.json", "garbage_bot/fixtures/uuid_inclusion.json"]
+    fixtures = ["garbage_bot/fixtures/fixture_1.json", 
+    # "garbage_bot/fixtures/uuid_inclusion.json"
+    ]
     def setUp(self):
         # garbage_type, area_code, expected
         self.parameters_type_area = [
