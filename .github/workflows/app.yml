@@ -26,7 +26,9 @@ jobs:
           CHANNEL_SECRET_: ${{ secrets.LINE_CHANNEL_SECRET }}
         run: |
           cd ./mybot
-          echo TEST_UID_=$TEST_UID_\nACCESS_TOKEN_=$ACCESS_TOKEN_\nCHANNEL_SECRET_=$CHANNEL_SECRET_ > .env
+          echo TEST_UID_=$TEST_UID_ > .env;
+          echo ACCESS_TOKEN_=$ACCESS_TOKEN_ >> .env;
+          echo CHANNEL_SECRET_=$CHANNEL_SECRET_ >> .env;
           docker-compose up -d
           docker-compose exec -T web python manage.py makemigrations
           docker-compose exec -T web python manage.py migrate
