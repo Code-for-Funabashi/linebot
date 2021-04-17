@@ -1,4 +1,4 @@
-index,town_name,district_name,番地詳細
+index,town_name,district_name,address_name
 0,旭町,1丁目,
 1,旭町,2丁目,"1～18,23～27"
 2,旭町,2丁目,19～22

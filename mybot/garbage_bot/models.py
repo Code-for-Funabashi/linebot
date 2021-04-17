@@ -21,7 +21,7 @@ class Area(models.Model):
     # 
     town_name = models.CharField(max_length=15, null=True)
     district_name = models.CharField(max_length=15, null=True)
-    address_name = models.CharField(max_length=32, null=True)
+    address_name = models.CharField(max_length=64, null=True)
 
 class GarbageType(models.Model):
     # TODO: develop the data model.

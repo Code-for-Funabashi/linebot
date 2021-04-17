@@ -1,8 +1,16 @@
 from django.db import models
+from garbage_bot.models import Area, GarbageType, CollectDay
 
 def get_json(row):
     out_list = []
-    for garbage_type in range(1, 4):
+
+    BURNABLE_WD = 2
+    DAY_NIGHT_COLUMN = 3
+    NON_BURNABLE_WD = 4
+    RESOURCE = 5
+    VALUABLES = 6
+    DISTRICT_COL = 7
+    for garbage_type in range(1, 5):
         
         # town_name = row["town_name"]
         # district_name = row["district_name"]
@@ -29,10 +37,10 @@ def get_json(row):
             weekday_info = row.iloc[VALUABLES]
 
         out_list.append({
-            "area_id": area_id,
+            "area_id": Area(area_id+1),
             # "town_name": town_name,
             # "district_name": district_name,
-            "garbage_type": garbage_type,
+            "garbage_type": GarbageType(garbage_type),
             "day_or_night":day_or_night,
             "nth_week":nth_week,
             "weekday_info":weekday_info,
