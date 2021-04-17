@@ -29,7 +29,7 @@ class Garbage_BotTestCase(TestCase):
             ("？", "unknown"),
         ]
         Remind.objects.create(
-            uuid=os.environ["LINE_TEST_UID"],
+            uuid="test_case:remind",
             # Currently when2push = models.DateField(auto_now=True)
             # We have to consider which datatype we should use; date or datetime.
             when2push=datetime.datetime.now() + datetime.timedelta(minutes=1),
@@ -49,21 +49,52 @@ class Garbage_BotTestCase(TestCase):
             ("い", "意外に人気あるんだよ"),
             ("ん", "自分何いうてんねん")
         ]
-    wd2id = {"月": 0 , "火": 1, "水": 2, "木":3, "金":4, "土":5, "日": 6}
+        
+        self.parameters_ask_what = [
+            ("ほげ", "ちょっと分からん買ったわ。もう一度答えてくれ.可燃ゴミ / 不燃ゴミ / 資源ゴミ / 有価物の中から選んでね！"),
+            ("可燃ごみ", "4月の19日がburnableを捨てる日だよ！時間帯は昼だよ"),
+            ("burnable", "4月の19日がburnableを捨てる日だよ！時間帯は昼だよ")
+        ]
+        self.parameters_ask_where = [
+            # user_id, msg, expected, expected_state
+            ("test_case:ask_where_state21", "旭町",
+             {"town_name":"旭町"},None, 22),
+            ("test_case:ask_where_state22", "1丁目",  
+            {"district_name":"1丁目"}, None, 24),
+            ("test_case:ask_where_state22", "2丁目",
+            {"district_name":"2丁目"},  None, 23),
+            # ...
+            # ...
+        ]
+
+    def test_ask_where(self):
+        user_id = "test_case:ask_where"
+        
+
+        for user_id, msg, kv, expected, expected_state in self.parameters_ask_where:
+            with self.subTest(p=(user_id, msg)):
+                cm = ContextManager(user_id, msg)
+                self.assertEqual(expected, cm.ask_where(kv))
+                self.assertEqual(expected_state, cm.context.state)
+        pass
 
     def test_ask_what(self):
         user_id = "test_case:ask_what"
-        context: Context = Context.objects.filter(uuid=user_id).latest()
-        actual = ask_what(context)
+        # context: Context = Context.objects.filter(uuid=user_id).latest()
+        
+        def _ask_what(user_id, msg):
+            cm = ContextManager(user_id, msg)
+            actual = cm.ask_what()
+            return actual
         # TODO: expected作成
         # 4.17 モデルの更新をfixtureに反映させる。
-        expected = "ちょっと分からん買ったわ。もう一度答えてくれ.\n\
-            可燃ゴミ / 不燃ゴミ / 資源ゴミ / 有価物の中から選んでね！"
+        # expected = "ちょっと分からん買ったわ。もう一度答えてくれ.可燃ゴミ / 不燃ゴミ / 資源ゴミ / 有価物の中から選んでね！"
         # expected = f"{curr_month}月の{target_day}日が{garbage_type}を捨てる日だよ！{'時間帯は' + day_or_night + 'だよ' if day_or_night else '' }"
-        self.assertEqual(
-            expected, 
-            actual    
-            )
+
+        
+        for p, expected in self.parameters_ask_what:
+            with self.subTest(p=p):
+                self.assertEqual(expected, _ask_what(user_id, p))
 
     def test_manage_context(self):
         user_id = "test_case:manage_context"
@@ -73,8 +104,8 @@ class Garbage_BotTestCase(TestCase):
     def test_get_day_to_collect(self):
         # import pdb;pdb.set_trace()
         # TODO: utc問題解消しておく
-        expected = "4月の12日がburnableを捨てる日だよ！時間帯は昼だよ"
-        user_id = os.environ["LINE_TEST_UID"]
+        expected = "4月の19日がburnableを捨てる日だよ！時間帯は昼だよ"
+        user_id = "test_case:get_day_to_collect"
         try:
             context: Context = Context.objects.filter(uuid=user_id).latest()
             actual = get_day_to_collect(context)
@@ -114,7 +145,6 @@ class Garbage_BotTestCase(TestCase):
     #         with self.subTest(p=p):
     #             self.assertEqual(expected, parse_message(p))
     
-
 
     # def test_choose_response(self):
     #     for (content_type, text), expected \
