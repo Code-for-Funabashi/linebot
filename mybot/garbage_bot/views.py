@@ -12,9 +12,8 @@ from garbage_bot.models import (
     Context, GarbageType,
     )
 
-
-CHANNEL_SECRET = os.environ["LINE_CHANNEL_SECRET_"]
-ACCESS_TOKEN = os.environ["LINE_ACCESS_TOKEN_"]
+CHANNEL_SECRET = os.environ["CHANNEL_SECRET_"]
+ACCESS_TOKEN = os.environ["ACCESS_TOKEN_"]
 from django.views.decorators.csrf import csrf_exempt
 
 # for schedule calculation.
