@@ -13,8 +13,8 @@ from garbage_bot.models import (
     )
 
 
-LINE_CHANNEL_SECRET = os.environ["LINE_CHANNEL_SECRET"]
-LINE_ACCESS_TOKEN = os.environ["LINE_ACCESS_TOKEN"]
+CHANNEL_SECRET = os.environ["LINE_CHANNEL_SECRET_"]
+ACCESS_TOKEN = os.environ["LINE_ACCESS_TOKEN_"]
 from django.views.decorators.csrf import csrf_exempt
 
 # for schedule calculation.
@@ -387,7 +387,7 @@ def reply_msg(reply_token, text):
             ]
     }
     requests.post(url, 
-        headers={'Content-Type': 'application/json', 'Authorization': f'Bearer {LINE_ACCESS_TOKEN}'},
+        headers={'Content-Type': 'application/json', 'Authorization': f'Bearer {ACCESS_TOKEN}'},
         data=json.dumps(body)
     )
     return "DONE"
