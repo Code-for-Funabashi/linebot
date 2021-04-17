@@ -37,7 +37,7 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    "garbage_bot.apps.GarbageBotConfig",
+    "garbage_bot",
     'django.contrib.sites',
 ]
 

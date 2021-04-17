@@ -1,9 +1,9 @@
 from django.apps import AppConfig
-from django.apps import AppConfig
 from django.db.models.signals import post_migrate
 from django.utils.translation import gettext_lazy as _
 
-from .utils import get_json
+from garbage_bot.models import Area
+from garbage_bot.utils import get_json
 
 class GarbageBotConfig(AppConfig):
     name = 'garbage_bot'
@@ -24,7 +24,7 @@ def setup_data(sender, **kwargs):
     """
     from django.contrib.sites.models import Site
     import pandas as pd
-    from models import Area
+    
 
     # Area creation.
     area_df = pd.read_csv("/code/area_df.csv")
