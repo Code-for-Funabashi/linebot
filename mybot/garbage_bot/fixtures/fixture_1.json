@@ -1,131 +1,60 @@
 [
-    {
-      "model": "garbage_bot.area",
-      
-      "fields": {
-        "area_id": 1,
-        "area_name_capital": "あ",
-        "area_name": "旭町1丁目",
-        "area_detail": "none"
-      }
-    },
-    {
-      "model": "garbage_bot.area",
-      
-      "fields": {
-        "area_id": 2,
-        "area_name_capital": "あ",
-        "area_name": "旭町2丁目",
-        "area_detail": "1～18,23～27"
-      }
-    },
-    {
-      "model": "garbage_bot.garbagetype",
-      
-      "fields": {
-        "garbage_type": 1,
-        "garbage_name": "burnable"
-      }
-    },
-    {
-      "model": "garbage_bot.garbagetype",
-      
-      "fields": {
-        "garbage_type": 2,
-        "garbage_name": "non_burnable"
-      }
-    },
-    {
-      "model": "garbage_bot.garbagetype",
-      
-      "fields": {
-        "garbage_type": 3,
-        "garbage_name": "resources"
-      }
-    },
-    {
-      "model": "garbage_bot.garbagetype",
-      
-      "fields": {
-        "garbage_type": 4,
-        "garbage_name": "valuables"
-      }
-    },
-    { 
-      "model": "garbage_bot.collectday",
-      
-      "fields": {
-        "area_id": 1,
-        "garbage_type": 1,
-        "weekday_info": "0,3",
-        "nth_week": -1,
-        "day_or_night": 1 
-      }
-    },
-    { 
-      "model": "garbage_bot.collectday",
-      
-      "fields": {
-        "area_id": 2,
-        "garbage_type": 1,
-        "weekday_info": "0,3",
-        "nth_week": -1,
-        "day_or_night": 1 
-      }
-    },
-    { 
-      "model": "garbage_bot.context",
-      "fields": {
-        "session_id": "test_session0",
-        "state": 10,
-        "garbage_type": -1,
-        "area_id": -2,
-        "uuid": "test_case:manage_context",
-        "created_at": "2021-03-12T15:57:00.524",
-        "updated_at": "2021-03-12T17:57:00.524"
-      }
-    },
-    { 
-      "model": "garbage_bot.context",
-      "fields": {
-        "session_id": "test_session1",
-        "state": 21,
-        "garbage_type": -1,
-        "area_id": -1,
-        "uuid": "test_case:manage_context",
-        "created_at": "2021-03-12T15:57:00.524",
-        "updated_at": "2021-03-13T17:57:00.524"
-      }
-    },
-    { 
-      "model": "garbage_bot.context",
-      "fields": {
-        "session_id": "test_session1",
-        "state": 22,
-        "garbage_type": -1,
-        "area_id": -2,
-        "uuid": "test_case:manage_context",
-        "created_at": "2021-03-12T15:57:00.524",
-        "updated_at": "2021-03-13T17:58:00.524"
-      }
-    },
-    { 
-      "model": "garbage_bot.context",
-      "fields": {
-        "session_id": "test_session1",
-        "state": 24,
-        "garbage_type": -1,
-        "area_candidates": {
-          "town_name":"旭町",
-          "district_name":"1丁目",
-          "address_name":"none"
-        },
-        "uuid": "test_case:ask_what",
-        "created_at": "2021-03-12T15:57:00.524",
-        "updated_at": "2021-03-13T17:58:00.524"
-      }
+  { 
+    "model": "garbage_bot.context",
+    "fields": {
+      "session_id": "test_session1",
+      "state": 22,
+      "garbage_type": null,
+      "area_candidates": {
+        "town_name":"旭町",
+        "district_name":"1丁目"
+      },
+      "uuid": "test_case:ask_what",
+      "created_at": "2021-03-12T15:57:00.524",
+      "updated_at": "2021-03-13T17:58:00.524"
     }
-
-
-       
+  },
+  { 
+    "model": "garbage_bot.context",
+    "fields": {
+      "session_id": "test_session2",
+      "state": 24,
+      "garbage_type": 1,
+      "area_candidates": {
+        "town_name":"旭町",
+        "district_name":"1丁目",
+        "address_name":"nan"
+      },
+      "uuid": "test_case:get_day_to_collect",
+      "created_at": "2021-03-12T15:57:00.524",
+      "updated_at": "2021-03-13T17:58:00.524"
+    }
+  },
+  { 
+    "model": "garbage_bot.context",
+    "fields": {
+      "session_id": "test_session3",
+      "state": 21,
+      "garbage_type": null,
+      "area_candidates": {
+      },
+      "uuid": "test_case:ask_where_state21",
+      "created_at": "2021-04-12T15:57:00.524",
+      "updated_at": "2021-04-13T17:58:00.524"
+    }
+  },
+  { 
+    "model": "garbage_bot.context",
+    "fields": {
+      "session_id": "test_session3",
+      "state": 22,
+      "garbage_type": null,
+      "area_candidates": {
+        "town_name":"旭町"
+      },
+      "uuid": "test_case:ask_where_state22",
+      "created_at": "2021-04-12T15:57:00.524",
+      "updated_at": "2021-04-13T17:58:00.524"
+    }
+  }
 ]
