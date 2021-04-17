@@ -68,57 +68,6 @@ def callback(request):
 
 
 # 過去のお話を踏まえて、話す内容決める
-def manage_context(user_id):
-
-    # return 
-    #   next_method: 次に利用する関数を返す？
-    context: Context = Context.objects.filter(uuid=user_id).latest()
-    status = context.status
-    if status == 0:
-        pass
-    # 1文字遊びしてきた
-    elif status // 10 == 1:
-        pass
-    # ゴミ収集日を聞いてきた
-    elif status // 10 == 2:
-        # check whether context has "where" and "what"
-        # if where to collect is known is status == 20
-        # if where to collect is known and what to collect is not known is status == 24
-
-        # CODE HERE!
-        # どこの地域なのか？
-        if status == 21:
-        # 21: ask_where聞き終わり
-            ask_where(context, district=False)
-        # with 21 + msg:町名を答えてもらった -> 22
-        elif status == 22:
-            ask_where(context, district=True)
-        # 22: n丁目なのか答えてもらう
-        # with 22 + msg:n丁目を答えてもらった -> 23: DONE
-        
-        elif status == 23:
-            ask_where(context, district=True)
-        
-
-        # ask_what()
-        # 何捨てたいのか聞く
-        ask_what()
-        # with 24 + msg:garbage_typeを答えてもらった -> 25
-        get_day_to_collect(context)
-            
-        pass
-    # ゴミリマインドをお願いしてきた
-    elif status == 30:
-        # check whether context has "where" and "what"
-        # 
-        # CODE HERE!
-        # ask_what()
-        # ask_where()
-        pass
-    # やりとり終わったで or やりとりの途中で一日経っちゃったよ笑
-    elif status == 40:
-        pass
-
 class ContextManager():
 
     def __init__(self, user_id, msg):
@@ -128,8 +77,8 @@ class ContextManager():
         self.reply = None
 
     def receive_msg(self):
-        status = self.context.status
-        if status == 0:
+        state = self.context.state
+        if state == 0:
             # 何がしたくて話しかけられたかを最初話す
             msg = self.parse_message()
             reply_msg(msg)
@@ -137,34 +86,34 @@ class ContextManager():
             # 30
             # 0 : 0のままだったら、もう一度「何がしたいんのか」聞く
         # # 1文字遊びしてきた
-        # elif status // 10 == 1:
+        # elif state // 10 == 1:
         #     get_one_message(self.msg)
         # ゴミ収集日を聞いてきた
 
         # CODE HERE!
         # どこの地域なのか？
-        # elif status == 20:
+        # elif state == 20:
         #     reply_msg("どこの地域が良いですか？")
-        elif status == 21:
+        elif state == 21:
         # 21: ask_where聞き終わり
             self.ask_where({"town_name":self.msg})
             
         # with 21 + msg:町名を答えてもらった -> 22
-        elif status == 22:
+        elif state == 22:
             self.ask_where({"district_name":self.msg})
         # 22: n丁目なのか答えてもらう
         # with 22 + msg:n丁目を答えてもらった -> 23: DONE
         
-        elif status == 23:
+        elif state == 23:
             self.ask_where({"address_name":self.msg})
         
 
         # ask_what()
         # 何捨てたいのか聞く
-        elif status == 24:
+        elif state == 24:
             ask_what()
         # with 24 + msg:garbage_typeを答えてもらった -> 25
-        elif status == 25:
+        elif state == 25:
             get_day_to_collect(context)
         
     def ask(self, type_):
@@ -178,27 +127,28 @@ class ContextManager():
     def parse_message(self):
         
         if "ゴミ" in self.msg and re.findall(r"捨てたい|？", self.msg):
-            status = 21
+            state = 21
             reply_msg_ = "ゴミ捨てたいんですね！"+"どこの地域が良いですか？"
         # elif len(self.msg) == 1:
         #     talk_themes = json.load(open("garbage_bot/statics/talks.json"))
         #     if talk_themes.get(msg):
-        #         status = 1
+        #         state = 1
         elif "リマインド" in self.msg:
-            status = 31
+            state = 31
             reply_msg_ = "リマインド承知！"+"どこの地域が良いですか？"
         else:
-            status = 0
+            state = 0
             reply_msg_ = "ごめんなさい。も一度何したいか教えてちょ！"
 
-        self.status = status
+        self.state = state
         return reply_msg_
 
     def ask_where(self, key_value:dict):
         # inspect the input.
+        import pdb; pdb.set_trace()
         current_keys = self.context.area_candidates.copy()
         current_keys.update(key_value)
-        qs = Area.objects.filter(current_keys)
+        qs = Area.objects.filter(**current_keys)
 
         if len(qs) == 0:
             return "んー見つからなかった。もう一度お願い"
@@ -214,13 +164,13 @@ class ContextManager():
                 break
         if len(qs) == 1:
             # finished to specify where you want to know the day to collect.
-            self.update({"status": 24}) # =>次は聞きたい地域
+            self.update("state", 24) # =>次は聞きたい地域
             # printじゃなくreply msg func使う
             print("OK、じゃあ次は捨てたいゴミの種類を教えてね！\n\
                 可燃ゴミ / 不燃ゴミ / 資源ゴミ / 有価物")
-        elif len(qs)>0:
+        elif len(qs)>1:
             print(f"OK、さらに{next_name}を指定してください！")
-            self.update({"status": self.context.status + 1})
+            self.update("state", self.context.state + 1)
             # quick reply
         else:
             pass
@@ -229,26 +179,24 @@ class ContextManager():
         qs = GarbageType.objects.filter(garbage_name=self.msg)
 
         if len(qs) != 1:
-            reply = "ちょっと分からん買ったわ。もう一度答えてくれ.\n\
-                可燃ゴミ / 不燃ゴミ / 資源ゴミ / 有価物の中から選んでね！"
+            reply = "ちょっと分からん買ったわ。もう一度答えてくれ.可燃ゴミ / 不燃ゴミ / 資源ゴミ / 有価物の中から選んでね！"
             print(reply)
         # if specified.
         else:
             print("ok! 計算するね。")
-            self.update({"status": self.context.status + 1})
-            reply = get_day_to_collect(context)
+            self.update("state", self.context.state + 1)
+            reply = get_day_to_collect(self.context)
         return reply
-    def update(self, key_value:dict):
-        key, value = key_value.items()
+    def update(self, key, value):
         setattr(self.context, key, value)
         self.context.save()
 
 
-# status == None(新規ユーザ)の場合、新しいセッションを発行する
-# status == 4の場合、新しいセッションを発行する
+# state == None(新規ユーザ)の場合、新しいセッションを発行する
+# state == 4の場合、新しいセッションを発行する
 # 今発話された内容を精査する
 
-# status == 1の場合、
+# state == 1の場合、
 def get_one_message(msg):
     talk_themes = json.load(open("garbage_bot/statics/talks.json"))
     if talk_themes.get(msg):
@@ -256,10 +204,16 @@ def get_one_message(msg):
     else:
         return "自分何いうてんねん"
 
-def get_day_to_collect(context):
+def get_day_to_collect(context: Context):
+    
     # trash_collection_days.xlsxの各行の情報がとって来れればいい状態:
     garbage_type = context.garbage_type
-    area_id = context.area_id
+    assert garbage_type
+    area_candidates = context.area_candidates
+    # specify area_id
+    qs = Area.objects.filter(**area_candidates)
+    assert len(qs) == 1
+    area_id = qs[0].pk
     ret_message = get_next_trash_day_of(garbage_type, area_id)
     return ret_message
 
