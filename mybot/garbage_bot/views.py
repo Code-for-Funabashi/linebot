@@ -218,8 +218,7 @@ class ContextManager():
             self.update({"status": 24}) # =>次は聞きたい地域
             # printじゃなくreply msg func使う
             print("OK、じゃあ次は捨てたいゴミの種類を教えてね！\n\
-                可燃ゴミ / 不燃ゴミ / 資源ゴミ / 有価物
-                ")
+                可燃ゴミ / 不燃ゴミ / 資源ゴミ / 有価物")
         elif len(qs)>0:
             print(f"OK、さらに{next_name}を指定してください！")
             self.update({"status": self.context.status + 1})
