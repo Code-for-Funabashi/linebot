@@ -44,14 +44,15 @@ def callback(request):
                 print(event)
                 reply_token = event['replyToken']
                 message_type = event['message']['type']
-
-                # 1. Extract UID
-                # 2. Get the latest context
-                # manage_context
-
+                
                 if message_type == 'text':
-                    text = event['message']['text']
-
+                    # 1. Extract UID
+                    user_id = None
+                    # 2. Extract message
+                    msg = event['message']['text']
+                    # 2. Instanciate a Context Manager.
+                    cm = ContextManager(user_id, msg)
+                    
                     # 3. parse_message
                     content_type = parse_message(text)
 
@@ -82,7 +83,7 @@ class ContextManager():
             # 何がしたくて話しかけられたかを最初話す
             msg = self.parse_message()
             reply_msg(msg)
-            # 20
+            # 20 
             # 30
             # 0 : 0のままだったら、もう一度「何がしたいんのか」聞く
         # # 1文字遊びしてきた
@@ -114,25 +115,23 @@ class ContextManager():
             ask_what()
         # with 24 + msg:garbage_typeを答えてもらった -> 25
         elif state == 25:
-            get_day_to_collect(context)
-        
-    def ask(self, type_):
-        if type_ == "where":
+            # TODO:
+            # ex:「前、教えた情報、前日にリマインドする？」と聞く
+            # if so, execute set_reminder()
             pass
-            # reply_msg
-        elif type_ == "what":
-            pass
-            # reply_msg
         
+        # remider setting
+        elif state >= 30:
+            # TODO:
+            # Already know where to collect/ what type of garbage??
+            # 1. check the detail of remind.
+            # 2. if not known, retry to ask as we did in state >=20
+            pass
     def parse_message(self):
         
         if "ゴミ" in self.msg and re.findall(r"捨てたい|？", self.msg):
             state = 21
             reply_msg_ = "ゴミ捨てたいんですね！"+"どこの地域が良いですか？"
-        # elif len(self.msg) == 1:
-        #     talk_themes = json.load(open("garbage_bot/statics/talks.json"))
-        #     if talk_themes.get(msg):
-        #         state = 1
         elif "リマインド" in self.msg:
             state = 31
             reply_msg_ = "リマインド承知！"+"どこの地域が良いですか？"
