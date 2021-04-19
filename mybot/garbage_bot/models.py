@@ -13,12 +13,8 @@ class Area(models.Model):
     # TODO: develop the data model.
     # property list
     #   - area_id:
-    #   - area_name: 町名
-    #   - area_name_capital: 町名の頭文字
-
     #   - area_detail: 番地詳細
     area_id = models.IntegerField(primary_key=True)
-    # 
     town_name = models.CharField(max_length=15, null=True)
     district_name = models.CharField(max_length=15, null=True)
     address_name = models.CharField(max_length=64, null=True)
@@ -50,7 +46,6 @@ class CollectDay(models.Model):
     weekday_info = models.CharField(max_length=10, null=False)
     nth_week = models.IntegerField()
     day_or_night = models.IntegerField()
-    # models.JSONField()
 
 
 class Remind(models.Model):
