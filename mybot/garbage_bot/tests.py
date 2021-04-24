@@ -68,6 +68,7 @@ class Garbage_BotTestCase(TestCase):
         ]
 
     def test_ask_where(self):
+        # import pdb; pdb.set_trace()
         user_id = "test_case:ask_where"
         
 
@@ -104,7 +105,7 @@ class Garbage_BotTestCase(TestCase):
     def test_get_day_to_collect(self):
         # import pdb;pdb.set_trace()
         # TODO: utc問題解消しておく
-        expected = "4月の19日がburnableを捨てる日だよ！時間帯は昼だよ"
+        expected = "4月の22日がburnableを捨てる日だよ！時間帯は昼だよ"
         user_id = "test_case:get_day_to_collect"
         try:
             context: Context = Context.objects.filter(uuid=user_id).latest()

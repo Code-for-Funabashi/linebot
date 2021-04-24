@@ -112,14 +112,13 @@ class ContextManager():
         # ask_what()
         # 何捨てたいのか聞く
         elif state == 24:
-            ask_what()
+            self.ask_what()
         # with 24 + msg:garbage_typeを答えてもらった -> 25
         elif state == 25:
             # TODO:
             # ex:「前、教えた情報、前日にリマインドする？」と聞く
             # if so, execute set_reminder()
             pass
-        
         # remider setting
         elif state >= 30:
             # TODO:
@@ -176,7 +175,6 @@ class ContextManager():
     def ask_what(self):
         # retreive
         qs = GarbageType.objects.filter(garbage_name=self.msg)
-
         if len(qs) != 1:
             reply = "ちょっと分からん買ったわ。もう一度答えてくれ.可燃ゴミ / 不燃ゴミ / 資源ゴミ / 有価物の中から選んでね！"
             print(reply)
