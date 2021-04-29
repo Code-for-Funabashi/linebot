@@ -301,27 +301,6 @@ def get_next_trash_day_of(garbage_type, area_code):
 
 
 
-def choose_response(content_type, text):
-    if content_type == "next_ask_trash_type":
-        reply = "ありがとうございますー！何のゴミの収集日を聞きたいですか？"
-    elif content_type == "unknown":
-        reply = "ふなっしー？ふなっしーとは付かず離れずの距離を保っていたい"
-    elif content_type == "casual_talk":
-        talk_themes = json.load(open("garbage_bot/statics/talks.json"))
-        reply = talk_themes[text]
-    elif content_type == "which_trash_type_to_notify":
-        # uidごとに過去の会話から、リマインドしたいユーザかを把握、
-        # どのゴミの収集日をリマインドするかをユーザに聞く。
-        # last_message is which_trash_type_to_notify
-        # 3/23: ユーザ対話ログ機能を実装したのち、リマインド機能の実装に入る方がいいかもしれない。
-        reply = "ありがとうございますー！リマインドする機能は実装中です。すまんな"
-    else:
-        # burnable / non_burnable
-        trash_info = get_next_trash_day_of(garbage_type, area_code)
-        reply = trash_info
-    return reply
-
-
 
 def get_trash_info_area_of(garbage_type, area_id) -> tuple:
     # TODO: get data from area_trash_days table
