@@ -15,8 +15,8 @@ class Area(models.Model):
     #   - area_id:
     #   - area_detail: 番地詳細
     area_id = models.IntegerField(primary_key=True)
-    town_name = models.CharField(max_length=15, null=True)
-    district_name = models.CharField(max_length=15, null=True)
+    town_name = models.CharField(max_length=64, null=True)
+    district_name = models.CharField(max_length=64, null=True)
     address_name = models.CharField(max_length=64, null=True)
 
     def __str__(self):
@@ -79,3 +79,5 @@ class Context(models.Model):
 
     class Meta:
         get_latest_by = ["updated_at"]
+    def __str__(self):
+        return f"{self.uuid} / {self.state} / {str(self.created_at)}"

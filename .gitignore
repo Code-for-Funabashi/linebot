@@ -11,7 +11,7 @@ how_to_treat_open_data.ipynb
 
 # migrations
 /mybot/garbage_bot/migrations/*
-
+# garbage_bot/migrations/*.py
 
 # __pychache__
 /**/__pycache__/

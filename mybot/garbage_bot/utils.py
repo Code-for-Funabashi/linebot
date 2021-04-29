@@ -1,7 +1,7 @@
 from django.db import models
 from garbage_bot.models import Area, GarbageType, CollectDay
 
-def get_json(row):
+def get_json(row, idx):
     out_list = []
 
     BURNABLE_WD = 2
@@ -19,25 +19,25 @@ def get_json(row):
         day_or_night = -1 # 昼夜の指定がされているのは可燃ごみだけ
         
         # sample_df indexをarea_idにしているので　name propertyで取得
-        area_id = row.name
+        area_id = idx + 1
         
         district_info = row[DISTRICT_COL]
         if garbage_type == 1:
-            day_or_night = row.iloc[DAY_NIGHT_COLUMN]
-            weekday_info = row.iloc[BURNABLE_WD]
+            day_or_night = row[DAY_NIGHT_COLUMN]
+            weekday_info = row[BURNABLE_WD]
             
         elif garbage_type == 2: # non_burnable
-            nth_week = row.iloc[8]
-            weekday_info = row.iloc[9]
+            nth_week = row[8]
+            weekday_info = row[9]
             
         elif garbage_type == 3: # resources / 資源
-            weekday_info = row.iloc[RESOURCE]
+            weekday_info = row[RESOURCE]
             
         elif garbage_type == 4: # 有価物
-            weekday_info = row.iloc[VALUABLES]
+            weekday_info = row[VALUABLES]
 
         out_list.append({
-            "area_id": Area(area_id+1),
+            "area_id": Area(area_id),
             # "town_name": town_name,
             # "district_name": district_name,
             "garbage_type": GarbageType(garbage_type),

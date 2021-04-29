@@ -1,6 +1,7 @@
 from django.apps import AppConfig
 from django.db.models.signals import post_migrate
 from django.utils.translation import gettext_lazy as _
+import csv
 
 from django.db.utils import IntegrityError
 
@@ -25,7 +26,7 @@ def setup_data(sender, **kwargs):
     # docker-compose exec -T web python manage.py migrate
     """
     from django.contrib.sites.models import Site
-    import pandas as pd
+
     from garbage_bot.models import Area, GarbageType, CollectDay
     from garbage_bot.utils import get_json
 
@@ -33,13 +34,31 @@ def setup_data(sender, **kwargs):
     # import pdb;pdb.set_trace()
     try:
         # Area creation.
-        area_df = pd.read_csv("/code/data/area_df.csv")
-        area_objects = area_df.apply(make_area_records, axis=1).to_list()
+        area_objects = []
+        with open("/code/data/area_df.csv", "r+") as f:
+            lines = csv.reader(f)
+            head = next(lines)
+            print(head)
+            # import pdb; pdb.set_trace()
+            for l_ in lines:
+                # l_ = [el if el else None for el in l.strip().split(",")]
+                # print(l_)
+                row=dict(
+                    index=int(l_[0]),
+                    town_name=l_[1],
+                    district_name=l_[2],
+                    address_name=l_[3],
+                )
+                area_objects.append(make_area_records(row))
         Area.objects.bulk_create(area_objects)
     except IntegrityError as e:
         print(f"Error for Area: {e}")
         pass
-    
+    except Exception as e:
+
+        print(e)
+        import pdb; pdb.set_trace()
+
     try:
         # GarbageType creation.
         GarbageTypeList = ["burnable",
@@ -53,8 +72,16 @@ def setup_data(sender, **kwargs):
         pass
     try:
         # CollectDay creation.
-        sample_df = pd.read_csv("/code/data/sample_df.csv")
-        obj_list = sample_df.apply(get_json, axis=1).sum()
+        obj_list = []
+
+        with open("/code/data/sample_df.csv", "r+") as f:
+            lines = csv.reader(f)
+            next(lines)
+            for i, l in enumerate(lines):
+                # ['あ', '旭町1丁目', '0,3', '1', '2木', '2', '2.0', '', '2', '3', '旭町', '1丁目']
+                obj_list.extend(get_json(l, i))
+            
+
         CollectDay.objects.bulk_create([CollectDay(**obj) for obj in obj_list])
     except IntegrityError as e:
         print(f"Error for CollectDay: {e}")

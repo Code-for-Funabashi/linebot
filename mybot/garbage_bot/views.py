@@ -11,10 +11,11 @@ from garbage_bot.models import (
     Remind, Area, CollectDay,
     Context, GarbageType,
     )
+from django.views.decorators.csrf import csrf_exempt
 
 CHANNEL_SECRET = os.environ["CHANNEL_SECRET_"]
 ACCESS_TOKEN = os.environ["ACCESS_TOKEN_"]
-from django.views.decorators.csrf import csrf_exempt
+
 
 # for schedule calculation.
 today = datetime.datetime.now()
@@ -39,32 +40,22 @@ def callback(request):
         # リクエストが空でないことを確認
         if(request_json != None):
             # イベントの取得
-            # import pdb;pdb.set_trace()
             for event in request_json['events']:
                 print(event)
                 reply_token = event['replyToken']
                 message_type = event['message']['type']
+                user_id = event["source"]["userId"]
                 
                 if message_type == 'text':
-                    # 1. Extract UID
-                    user_id = None
                     # 2. Extract message
                     msg = event['message']['text']
                     # 2. Instanciate a Context Manager.
                     cm = ContextManager(user_id, msg)
                     
-                    # 3. parse_message
-                    content_type = parse_message(text)
-
-
-                    # context
-
-                    # 応答 bot を呼ぶ
-                    reply = choose_response(content_type, text)
                     # make a request.
-                    reply_msg(reply_token, reply)
+                    reply_msg(reply_token, cm.receive_msg())
                     # reply += tool.reply_text(reply_token, text)
-    return HttpResponse(reply, status=200)
+    return HttpResponse(status=200)
 
 
 
@@ -72,7 +63,7 @@ def callback(request):
 class ContextManager():
 
     def __init__(self, user_id, msg):
-        context: Context = Context.objects.filter(uuid=user_id).latest()
+        context: Context = self.get_or_create(user_id)
         self.context = context
         self.msg = msg
         self.reply = None
@@ -82,10 +73,7 @@ class ContextManager():
         if state == 0:
             # 何がしたくて話しかけられたかを最初話す
             msg = self.parse_message()
-            reply_msg(msg)
-            # 20 
-            # 30
-            # 0 : 0のままだったら、もう一度「何がしたいんのか」聞く
+
         # # 1文字遊びしてきた
         # elif state // 10 == 1:
         #     get_one_message(self.msg)
@@ -97,35 +85,38 @@ class ContextManager():
         #     reply_msg("どこの地域が良いですか？")
         elif state == 21:
         # 21: ask_where聞き終わり
-            self.ask_where({"town_name":self.msg})
+            msg = self.ask_where({"town_name":self.msg})
             
         # with 21 + msg:町名を答えてもらった -> 22
         elif state == 22:
-            self.ask_where({"district_name":self.msg})
+            msg = self.ask_where({"district_name":self.msg})
+
         # 22: n丁目なのか答えてもらう
         # with 22 + msg:n丁目を答えてもらった -> 23: DONE
         
         elif state == 23:
-            self.ask_where({"address_name":self.msg})
-        
+            msg = self.ask_where({"address_name":self.msg})
 
         # ask_what()
         # 何捨てたいのか聞く
         elif state == 24:
-            self.ask_what()
+            msg = self.ask_what()
         # with 24 + msg:garbage_typeを答えてもらった -> 25
         elif state == 25:
             # TODO:
             # ex:「前、教えた情報、前日にリマインドする？」と聞く
+            # msgはなんでもいい。
+            msg = "前、教えた情報、前日にリマインドする？"
             # if so, execute set_reminder()
-            pass
         # remider setting
         elif state >= 30:
             # TODO:
             # Already know where to collect/ what type of garbage??
             # 1. check the detail of remind.
             # 2. if not known, retry to ask as we did in state >=20
-            pass
+            msg = "リマインドは実装中なんだわ"
+        return msg
+
     def parse_message(self):
         
         if "ゴミ" in self.msg and re.findall(r"捨てたい|？", self.msg):
@@ -143,7 +134,11 @@ class ContextManager():
 
     def ask_where(self, key_value:dict):
         # inspect the input.
-        import pdb; pdb.set_trace()
+
+        # FIXME:
+        # `area_candidates` is not so good name.
+        # it contains the information to specify the location to throw away.
+        # the elements are ["town_name", "district_name", "address_name"].
         current_keys = self.context.area_candidates.copy()
         current_keys.update(key_value)
         qs = Area.objects.filter(**current_keys)
@@ -182,11 +177,23 @@ class ContextManager():
         else:
             print("ok! 計算するね。")
             self.update("state", self.context.state + 1)
+            self.update("garbage_type", qs[0])
             reply = get_day_to_collect(self.context)
         return reply
+
     def update(self, key, value):
         setattr(self.context, key, value)
         self.context.save()
+    
+    def get_or_create(self, user_id):
+        
+        qs = Context.objects.filter(uuid=user_id).latest()
+        if len(qs) == 0:
+            context = Context.objects.create(uuid=user_id)
+        else:
+            context = qs[0]
+        
+        return context
 
 
 # state == None(新規ユーザ)の場合、新しいセッションを発行する
@@ -326,6 +333,7 @@ def push_remind():
 
 
 def reply_msg(reply_token, text):
+    
     url = os.environ["LINE_ENDPOINT"]
     body = {
         "replyToken":reply_token,
