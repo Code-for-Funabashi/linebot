@@ -16,25 +16,37 @@ from django.views.decorators.csrf import csrf_exempt
 CHANNEL_SECRET = os.environ["CHANNEL_SECRET_"]
 ACCESS_TOKEN = os.environ["ACCESS_TOKEN_"]
 
-
+# TODO:
+# 曜日情報をどうとるべきか再検討する。
 # for schedule calculation.
-today = datetime.datetime.now()
-td = today.date()
+td = datetime.datetime.now()
 curr_day = td.day
-curr_weekday = today.date().weekday()
-weekday_of_first_day = td.replace(day=1).weekday()
+curr_weekday = td.date().weekday()
+# weekday_of_first_day = td.replace(day=1).weekday()
 curr_month = td.month
+curr_year = td.year
 
-# 今月分しかデータ取得できないし、何よりglobalで管理するべきではない気がする。
-first_weekdays = []
-for d in range(1, 8):
-    first_weekdays.append((d, (weekday_of_first_day + d - 1)%7))
+
+def get_first_weekdays(year, month):
+    """
+        input : year=2021, month=4
+        output: [(1, 3), (2, 4), (3, 5), (4, 6), (5, 0), (6, 1), (7, 2)]
+              :  means [(2021/04/01, 3(Thu)), (2021/04/02, 4(Fri)), .., (2021/04/07, 2(Wed)]
+    """
+    from calendar import Calendar
+    cal = Calendar()
+    first_week = cal.monthdayscalendar(year, month)[0]
+    wd_1st = first_week.index(1)
+    
+    first_weekdays = []
+    for d in range(1, 8):
+        first_weekdays.append((d, (wd_1st + d - 1)%7))
+    return first_weekdays    
 
 @csrf_exempt
 def callback(request):
     # TODO: This function would be called when linebot was spoken to by user
     # 
-    # import pdb; pdb.set_trace()
     if request.method == 'POST':
         request_json = json.loads(request.body.decode('utf-8'))
         # リクエストが空でないことを確認
@@ -187,15 +199,16 @@ class ContextManager():
     
     def get_or_create(self, user_id):
         
-        qs = Context.objects.filter(uuid=user_id).latest()
+        qs = Context.objects.filter(uuid=user_id)
         if len(qs) == 0:
-            context = Context.objects.create(uuid=user_id)
+            context = Context.objects.create(uuid=user_id, state=0)
         else:
-            context = qs[0]
-        
+            context = qs.latest()
         return context
 
 
+
+# -------------------------------------------------------------------------------------
 # state == None(新規ユーザ)の場合、新しいセッションを発行する
 # state == 4の場合、新しいセッションを発行する
 # 今発話された内容を精査する
@@ -229,7 +242,6 @@ def get_next_trash_day_of(garbage_type, area_code):
     # >>> get_trash_info_area_of(area)
     # The information is retrieved from the below site.
     # "https://www.city.funabashi.lg.jp/kurashi/gomi/001/p001523.html"
-    # 
     nthWeek, weekdays, day_or_night = get_trash_info_area_of(garbage_type, area_code)
     
     print(nthWeek, weekdays, day_or_night)
@@ -237,24 +249,56 @@ def get_next_trash_day_of(garbage_type, area_code):
     day_or_night = "昼" if day_or_night == 1 else "夜"
     import calendar
     weekdays = [int(wd) for wd in weekdays.split(",")]
-    first_target_weekday = list(filter(lambda x: x[1] in weekdays, first_weekdays))
+    
+    target_month = curr_month
 
-    if len(first_target_weekday) == 1:
-        # get day first_target_weekday[0][0]
-        # 対象となる第{nthWeek}{day}曜日 (nthWeek - 1) * 7
-        target_day = first_target_weekday[0][0] + (nthWeek - 1) * 7
-    elif len(first_target_weekday) >= 2: 
-        # 可燃ごみ
-        # import pdb; pdb.set_trace()
-        if nthWeek == -1:# every week garbages are collected.
-            first_days = [fwd[0] for fwd in first_target_weekday]
-            candidate_days = [fd + (nthWeek_ - 1) * 7 for fd in first_days for nthWeek_ in range(1, 6)
-                     if fd + (nthWeek_ - 1) * 7 < 32]
-            # next dayを見つける
-            target_day = min(filter(lambda x: x >= curr_day, candidate_days))
-    else:
-        return "ちょっとわからんかったわ"
-    return f"{curr_month}月の{target_day}日が{garbage_type}を捨てる日だよ！{'時間帯は' + day_or_night + 'だよ' if day_or_night else '' }"
+    def get_candidate_days(curr_year, curr_month):
+        first_weekdays_current_month = get_first_weekdays(curr_year, curr_month)
+        first_target_weekday = list(filter(lambda x: x[1] in weekdays, first_weekdays_current_month))
+
+        if len(first_target_weekday) == 1:
+            # get day first_target_weekday[0][0]
+            # 対象となる第{nthWeek}{day}曜日 (nthWeek - 1) * 7
+            if nthWeek > 0:
+                candidate_days = first_target_weekday[0][0] + (nthWeek - 1) * 7
+            else:
+                # 毎週収集される場合
+                first_days = [fwd[0] for fwd in first_target_weekday]
+                candidate_days = [fd + (nthWeek_ - 1) * 7 for fd in first_days for nthWeek_ in range(1, 6)
+                        if fd + (nthWeek_ - 1) * 7 < 32]
+
+        elif len(first_target_weekday) >= 2: 
+            # 可燃ごみ
+            if nthWeek == -1:# every week garbages are collected.
+                first_days = [fwd[0] for fwd in first_target_weekday]
+                candidate_days = [fd + (nthWeek_ - 1) * 7 for fd in first_days for nthWeek_ in range(1, 6) if fd + (nthWeek_ - 1) * 7 < 32]
+        else:
+            # maybe not occurred.
+            raise Exception("IRREGULAR PATTERN")
+        return candidate_days
+    
+    
+    def calculate_closest_day_in_same_month(candidate_days, target_month):
+        get_date_obj = lambda x: datetime.datetime(year=curr_year, month=target_month, day=x, hour=1)
+        filter_ = [x for x in candidate_days if get_date_obj(x) >= td]
+        if sum(filter_):#existing case
+            return min(filter_)
+        else:# does not case
+            return None
+
+    # 今月の対象日が既に過ぎている場合があるため、今月・来月分けて候補日を計算する必要がある
+    candidate_days = get_candidate_days(curr_year, curr_month)
+    target_day = calculate_closest_day_in_same_month(candidate_days, target_month)
+    if target_day is None:
+        # Then re-calculate the target day at next month.
+        target_month = curr_month + 1
+        candidate_days = get_candidate_days(curr_year, target_month)
+        target_day = calculate_closest_day_in_same_month(candidate_days, target_month)
+        
+
+    return f"{target_month}月の{target_day}日が{garbage_type}を捨てる日だよ！{'時間帯は' + day_or_night + 'だよ' if day_or_night else '' }"
+
+
 
 
 def choose_response(content_type, text):
