@@ -127,16 +127,6 @@ class Garbage_BotTestCase(TestCase):
             )
 
 
-    # End
-
-    # def test_get_next_trash_day_of(self):
-    #     # garbage_type, area_code
-    #     for garbage_type, area_code, expected in self.parameters_type_area:
-    #         with self.subTest():
-    #             self.assertEqual(
-    #                 expected, 
-    #                 get_next_trash_day_of(garbage_type, area_code)
-    #                 )
 
     # def test_get_one_message(self):
     #     for p, expected in self.parameters_casual_talks:
@@ -168,7 +158,7 @@ class Garbage_BotTestCase(TestCase):
     #     actual = type(get_trash_info_area_of(area="natsume"))
     #     self.assertEqual(dict, actual)
 class ContextManagerTestCase(TestCase):
-
+    fixtures = ["garbage_bot/fixtures/fixture_1.json", ]
     def test_get_or_create(self):
         user_id = "new_user"
         cm = ContextManager(user_id, msg="ゴミ捨てたい")
@@ -176,12 +166,23 @@ class ContextManagerTestCase(TestCase):
         qs = Context.objects.filter(uuid=user_id)
         self.assertEqual(len(qs), 1)
 
+    def test_state26(self):
+        expected = "Okay I'll set the reminder"
+        user_id = "test_case:state26"
+
+        cm = ContextManager(user_id, msg="うん")
+        actual = cm.receive_msg()
+
+        self.assertEqual(expected, actual)
+        qs = Remind.objects.filter(
+            uuid=user_id,
+            garbage_type=2,
+            )
+        self.assertEqual(len(qs), 1)
 
 
 class CallBackTestCase(TestCase):
-    fixtures = ["garbage_bot/fixtures/fixture_1.json", 
-    # "garbage_bot/fixtures/uuid_inclusion.json"
-    ]
+    fixtures = ["garbage_bot/fixtures/fixture_1.json", ]
     test_json = {
     'events': [{
         'timestamp': 1475246936807,

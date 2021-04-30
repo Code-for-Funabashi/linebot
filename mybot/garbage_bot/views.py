@@ -19,6 +19,9 @@ ACCESS_TOKEN = os.environ["ACCESS_TOKEN_"]
 # TODO:
 # 曜日情報をどうとるべきか再検討する。
 # for schedule calculation.
+# FIXME:
+# この仕様だと、curr_monthが12月の時に nextmonth:1月になるので、
+# curr_yearの修正をしないといけないが出来ていない。
 td = datetime.datetime.now()
 curr_day = td.day
 curr_weekday = td.date().weekday()
@@ -86,15 +89,6 @@ class ContextManager():
             # 何がしたくて話しかけられたかを最初話す
             bot_msg = self.parse_message()
 
-        # # 1文字遊びしてきた
-        # elif state // 10 == 1:
-        #     get_one_message(self.msg)
-        # ゴミ収集日を聞いてきた
-
-        # CODE HERE!
-        # どこの地域なのか？
-        # elif state == 20:
-        #     reply_msg("どこの地域が良いですか？")
         elif state == 21:
         # 21: ask_where聞き終わり
             bot_msg = self.ask_where({"town_name":self.msg})
@@ -126,8 +120,8 @@ class ContextManager():
             if self.is_affirmation():
                 # retrieve our context \
                 # in order to check where and when to remind
-                self.context
-                set_reminder()
+                bot_msg = "Okay I'll set the reminder"
+                set_reminder(self.context)
             else:
                 # context was done.
                 bot_msg = "Okay, that's the end of our conversation."
@@ -227,7 +221,8 @@ class ContextManager():
         return context
 
     def is_affirmation(self):
-        if "はい|Yes|うん" in self.msg:
+        affirmations = re.findall("はい|Yes|うん", self.msg)
+        if affirmations:
             return True
         else:
             return False
@@ -247,9 +242,7 @@ def get_one_message(msg):
     else:
         return "自分何いうてんねん"
 
-def get_day_to_collect(context: Context):
-    
-    # trash_collection_days.xlsxの各行の情報がとって来れればいい状態:
+def retrieveWhenWhereFromContext(context:Context):
     garbage_type = context.garbage_type
     assert garbage_type
     area_candidates = context.area_candidates
@@ -257,10 +250,18 @@ def get_day_to_collect(context: Context):
     qs = Area.objects.filter(**area_candidates)
     assert len(qs) == 1
     area_id = qs[0].pk
-    ret_message = get_next_trash_day_of(garbage_type, area_id)
+    return garbage_type, area_id
+
+
+def get_day_to_collect(context: Context):
+    
+    garbage_type, area_id = retrieveWhenWhereFromContext(context)
+    target_month, target_day, garbage_type, day_or_night =\
+         get_next_trash_day_of(garbage_type, area_id)
+    ret_message = f"{target_month}月の{target_day}日が{garbage_type}を捨てる日だよ！{'時間帯は' + day_or_night + 'だよ' if day_or_night else '' }"
     return ret_message
 
-def get_next_trash_day_of(garbage_type, area_code):
+def get_next_trash_day_of(garbage_type, area_id):
     
     # TODO: dayOfWeekから次の{garbage_type}のゴミの日を計算してくれるmethod
     # areaの指定
@@ -268,7 +269,13 @@ def get_next_trash_day_of(garbage_type, area_code):
     # >>> get_trash_info_area_of(area)
     # The information is retrieved from the below site.
     # "https://www.city.funabashi.lg.jp/kurashi/gomi/001/p001523.html"
-    nthWeek, weekdays, day_or_night = get_trash_info_area_of(garbage_type, area_code)
+
+    """
+
+    return:
+        target_month, target_day, garbage_type, day_or_night
+    """
+    nthWeek, weekdays, day_or_night = get_trash_info_area_of(garbage_type, area_id)
     
     print(nthWeek, weekdays, day_or_night)
 
@@ -321,8 +328,7 @@ def get_next_trash_day_of(garbage_type, area_code):
         candidate_days = get_candidate_days(curr_year, target_month)
         target_day = calculate_closest_day_in_same_month(candidate_days, target_month)
         
-
-    return f"{target_month}月の{target_day}日が{garbage_type}を捨てる日だよ！{'時間帯は' + day_or_night + 'だよ' if day_or_night else '' }"
+    return target_month, target_day, garbage_type, day_or_night
 
 
 
@@ -348,14 +354,36 @@ def get_trash_info_area_of(garbage_type, area_id) -> tuple:
 
 
 
-def set_reminder():
+def set_reminder(context: Context):
     """
     朝の時間帯にpush messageを送信するように記録しておく機能
     ---
-
+    args: 
+        context:Context
+        どこの地域のなんのゴミの情報をリマインドしたいか、
+        既にヒアリング済のcontextから情報を抽出し、
+        get_next_trash_day_of()を利用して情報を取得する。
     CREATE 
     (uuid, when2push, garbage_type) INTO Remind;
     """
+    garbage_type, area_id = retrieveWhenWhereFromContext(context)
+
+    target_month, target_day, garbage_type, day_or_night =\
+        get_next_trash_day_of(garbage_type, area_id)
+    # 時間帯は決め打ち
+    target_hour = 8
+    target_datetime = datetime.datetime(
+        year=curr_year,
+        month=target_month,
+        day=target_day,
+        hour=target_hour
+    )
+    # CREATE
+    Remind(
+        uuid=context.uuid,
+        when2push=target_datetime,
+        garbage_type=garbage_type
+    ).save()
     return "TO BE DONE"
 
 def push_remind():

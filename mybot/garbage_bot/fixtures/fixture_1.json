@@ -70,5 +70,20 @@
       "created_at": "2021-04-12T15:57:00.524",
       "updated_at": "2021-04-13T17:58:00.524"
     }
+  },
+  { 
+    "model": "garbage_bot.context",
+    "fields": {
+      "session_id": "test_session4",
+      "state": 26,
+      "garbage_type": 2,
+      "area_candidates": {
+        "town_name":"旭町",
+        "district_name":"1丁目"
+      },
+      "uuid": "test_case:state26",
+      "created_at": "2021-04-12T15:57:00.524",
+      "updated_at": "2021-04-13T17:58:00.524"
+    }
   }
 ]
