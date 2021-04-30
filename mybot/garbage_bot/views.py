@@ -313,11 +313,15 @@ def get_next_trash_day_of(garbage_type, area_id):
     
     def calculate_closest_day_in_same_month(candidate_days, target_month):
         get_date_obj = lambda x: datetime.datetime(year=curr_year, month=target_month, day=x, hour=1)
-        filter_ = [x for x in candidate_days if get_date_obj(x) >= td]
-        if sum(filter_):#existing case
-            return min(filter_)
-        else:# does not case
-            return None
+
+        if isinstance(candidate_days, int):
+            return candidate_days if get_date_obj(candidate_days) >= td else None
+        elif isinstance(candidate_days, list):
+            filter_ = [x for x in candidate_days if get_date_obj(x) >= td]
+            if sum(filter_):#existing case
+                return min(filter_)
+            else:# does not case
+                return None
 
     # 今月の対象日が既に過ぎている場合があるため、今月・来月分けて候補日を計算する必要がある
     candidate_days = get_candidate_days(curr_year, curr_month)
