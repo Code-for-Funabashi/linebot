@@ -21,8 +21,16 @@ jobs:
       - name: compose-run
         shell: bash
         env:
-          LINE_TEST_UID: ${{ secrets.LINE_TEST_UID }}
-#           ENVENV2: ${{ secrets.ENVENV2 }}
+          TEST_UID_: ${{ secrets.LINE_TEST_UID }}
+          ACCESS_TOKEN_: ${{ secrets.LINE_ACCESS_TOKEN }}
+          CHANNEL_SECRET_: ${{ secrets.LINE_CHANNEL_SECRET }}
         run: |
+          cd ./mybot
+          echo TEST_UID_=$TEST_UID_ > .env;
+          echo ACCESS_TOKEN_=$ACCESS_TOKEN_ >> .env;
+          echo CHANNEL_SECRET_=$CHANNEL_SECRET_ >> .env;
+          echo LINE_ENDPOINT=http://localhost:8000/garbage_bot/test/ >> .env
           docker-compose up -d
-          docker-compose exec web python manage.py test
+          docker-compose exec -T web python manage.py makemigrations
+          docker-compose exec -T web python manage.py migrate
+          docker-compose exec -T web python manage.py test

@@ -5,3 +5,16 @@
 
 config.yml
 /mybot/db.sqlite3
+.ipynb_checkpoints
+how_to_treat_open_data.ipynb
+.env
+
+# migrations
+/mybot/garbage_bot/migrations/*
+# garbage_bot/migrations/*.py
+
+# __pychache__
+/**/__pycache__/
+
+/**/uuid_inclusion.json
+.postgres/
