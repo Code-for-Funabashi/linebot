@@ -84,7 +84,7 @@ class ContextManager():
         state = self.context.state
         if state == 0:
             # 何がしたくて話しかけられたかを最初話す
-            msg = self.parse_message()
+            bot_msg = self.parse_message()
 
         # # 1文字遊びしてきた
         # elif state // 10 == 1:
@@ -97,37 +97,57 @@ class ContextManager():
         #     reply_msg("どこの地域が良いですか？")
         elif state == 21:
         # 21: ask_where聞き終わり
-            msg = self.ask_where({"town_name":self.msg})
+            bot_msg = self.ask_where({"town_name":self.msg})
             
         # with 21 + msg:町名を答えてもらった -> 22
         elif state == 22:
-            msg = self.ask_where({"district_name":self.msg})
+            bot_msg = self.ask_where({"district_name":self.msg})
 
         # 22: n丁目なのか答えてもらう
         # with 22 + msg:n丁目を答えてもらった -> 23: DONE
         
         elif state == 23:
-            msg = self.ask_where({"address_name":self.msg})
+            bot_msg = self.ask_where({"address_name":self.msg})
 
         # ask_what()
         # 何捨てたいのか聞く
         elif state == 24:
-            msg = self.ask_what()
+            bot_msg = self.ask_what()
         # with 24 + msg:garbage_typeを答えてもらった -> 25
         elif state == 25:
             # TODO:
             # ex:「前、教えた情報、前日にリマインドする？」と聞く
-            # msgはなんでもいい。
-            msg = "前、教えた情報、前日にリマインドする？"
+
+            bot_msg = "前、教えた情報、前日にリマインドする？"
+            self.update("state", 26)
+
+        elif state == 26:
             # if so, execute set_reminder()
+            if self.is_affirmation():
+                # retrieve our context \
+                # in order to check where and when to remind
+                self.context
+                set_reminder()
+            else:
+                # context was done.
+                bot_msg = "Okay, that's the end of our conversation."
         # remider setting
         elif state >= 30:
             # TODO:
             # Already know where to collect/ what type of garbage??
             # 1. check the detail of remind.
             # 2. if not known, retry to ask as we did in state >=20
-            msg = "リマインドは実装中なんだわ"
-        return msg
+            
+            # 1st digit and 2nd digit could have different meanings.
+            # Suppose if we implement state % 10 == 2: ...
+            # then the above codes could be reused for remider-setting.
+            # 1桁目：2==どこまで情報を聞き出しているか？を表す
+            # 二桁目：2==情報通知か3==リマインド通知かを表す
+            # elif state == 2x: というコードは `elif state % 10 == x`と言う形で表すことで
+            # ２つのケースにおける汎用メソッドとなる。
+
+            bot_msg = "リマインドは実装中なんだわ"
+        return bot_msg
 
     def parse_message(self):
         
@@ -205,6 +225,12 @@ class ContextManager():
         else:
             context = qs.latest()
         return context
+
+    def is_affirmation(self):
+        if "はい|Yes|うん" in self.msg:
+            return True
+        else:
+            return False
 
 
 
