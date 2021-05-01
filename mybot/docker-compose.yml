@@ -19,13 +19,12 @@ services:
     ports:
       - "127.0.0.1:8000:8000"
     environment:
-      # DATABASE_URL="postgres://username:password@hostname:5432/database"
       - DATABASE_URL=postgres://postgres:postgres@db:5432/postgres
     env_file:
       - .env
 
-    # よく分からないのであとで勉強する
     # https://qiita.com/NagaokaKenichi/items/7b66c58fda36b46f5938
+    # debugする時のみ標準出力をオンにする
     # tty: true
     # stdin_open: true
     depends_on:

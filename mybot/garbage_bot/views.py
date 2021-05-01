@@ -374,7 +374,8 @@ def set_reminder(context: Context):
 
     target_month, target_day, garbage_type, day_or_night =\
         get_next_trash_day_of(garbage_type, area_id)
-    # 時間帯は決め打ち
+    # TODO:時間帯は決め打ち
+    # どこかで検討しないと。
     target_hour = 8
     target_datetime = datetime.datetime(
         year=curr_year,
