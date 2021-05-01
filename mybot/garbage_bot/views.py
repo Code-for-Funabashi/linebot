@@ -1,11 +1,8 @@
 from django.shortcuts import render
 from django.http import HttpResponse, JsonResponse, HttpResponseRedirect
 import os, json, re
-
 import requests
-
 import datetime
-# Create your views here.
 
 from garbage_bot.models import (
     Remind, Area, CollectDay,
@@ -390,28 +387,6 @@ def set_reminder(context: Context):
         garbage_type=garbage_type
     ).save()
     return "TO BE DONE"
-
-def push_remind():
-    """
-    朝8時に 1-3までを実行する
-    1. Execute the following query
-        SELECT * WHERE when2push == {str(td)};
-    2. QuerySetをuuidごとにまとめ、それぞれのユーザに対してメッセージを送信する。
-    """
-    today = datetime.date.today()
-    # https://bradmontgomery.net/blog/date-lookups-django/
-    QuerySet = Remind.objects.filter(
-        when2push__day=today.day,
-        when2push__year=today.year,
-        when2push__month=today.month,
-    )
-    target_uuids = []
-    for q in QuerySet:
-        print("Push remind message for ", q.uuid)
-        # the pushing processing will be implemented later.
-        target_uuids.append(q.uuid)
-    return target_uuids
-
 
 
 def reply_msg(reply_token, text):
