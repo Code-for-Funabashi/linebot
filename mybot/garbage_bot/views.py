@@ -1,11 +1,8 @@
 from django.shortcuts import render
 from django.http import HttpResponse, JsonResponse, HttpResponseRedirect
 import os, json, re
-
 import requests
-
 import datetime
-# Create your views here.
 
 from garbage_bot.models import (
     Remind, Area, CollectDay,
@@ -19,6 +16,9 @@ ACCESS_TOKEN = os.environ["ACCESS_TOKEN_"]
 # TODO:
 # 曜日情報をどうとるべきか再検討する。
 # for schedule calculation.
+# FIXME:
+# この仕様だと、curr_monthが12月の時に nextmonth:1月になるので、
+# curr_yearの修正をしないといけないが出来ていない。
 td = datetime.datetime.now()
 curr_day = td.day
 curr_weekday = td.date().weekday()
@@ -84,50 +84,61 @@ class ContextManager():
         state = self.context.state
         if state == 0:
             # 何がしたくて話しかけられたかを最初話す
-            msg = self.parse_message()
+            bot_msg = self.parse_message()
 
-        # # 1文字遊びしてきた
-        # elif state // 10 == 1:
-        #     get_one_message(self.msg)
-        # ゴミ収集日を聞いてきた
-
-        # CODE HERE!
-        # どこの地域なのか？
-        # elif state == 20:
-        #     reply_msg("どこの地域が良いですか？")
         elif state == 21:
         # 21: ask_where聞き終わり
-            msg = self.ask_where({"town_name":self.msg})
+            bot_msg = self.ask_where({"town_name":self.msg})
             
         # with 21 + msg:町名を答えてもらった -> 22
         elif state == 22:
-            msg = self.ask_where({"district_name":self.msg})
+            bot_msg = self.ask_where({"district_name":self.msg})
 
         # 22: n丁目なのか答えてもらう
         # with 22 + msg:n丁目を答えてもらった -> 23: DONE
         
         elif state == 23:
-            msg = self.ask_where({"address_name":self.msg})
+            bot_msg = self.ask_where({"address_name":self.msg})
 
         # ask_what()
         # 何捨てたいのか聞く
         elif state == 24:
-            msg = self.ask_what()
+            bot_msg = self.ask_what()
         # with 24 + msg:garbage_typeを答えてもらった -> 25
         elif state == 25:
             # TODO:
             # ex:「前、教えた情報、前日にリマインドする？」と聞く
-            # msgはなんでもいい。
-            msg = "前、教えた情報、前日にリマインドする？"
+
+            bot_msg = "前、教えた情報、前日にリマインドする？"
+            self.update("state", 26)
+
+        elif state == 26:
             # if so, execute set_reminder()
+            if self.is_affirmation():
+                # retrieve our context \
+                # in order to check where and when to remind
+                bot_msg = "Okay I'll set the reminder"
+                set_reminder(self.context)
+            else:
+                # context was done.
+                bot_msg = "Okay, that's the end of our conversation."
         # remider setting
         elif state >= 30:
             # TODO:
             # Already know where to collect/ what type of garbage??
             # 1. check the detail of remind.
             # 2. if not known, retry to ask as we did in state >=20
-            msg = "リマインドは実装中なんだわ"
-        return msg
+            
+            # 1st digit and 2nd digit could have different meanings.
+            # Suppose if we implement state % 10 == 2: ...
+            # then the above codes could be reused for remider-setting.
+            # 1桁目：2==どこまで情報を聞き出しているか？を表す
+            # 二桁目：2==情報通知か3==リマインド通知かを表す
+            # elif state == 2x: というコードは `elif state % 10 == x`と言う形で表すことで
+            # ２つのケースにおける汎用メソッドとなる。
+
+            bot_msg = "リマインドは実装中なんだわ"
+        return bot_msg
 
     def parse_message(self):
         
@@ -206,6 +217,13 @@ class ContextManager():
             context = qs.latest()
         return context
 
+    def is_affirmation(self):
+        affirmations = re.findall("はい|Yes|うん", self.msg)
+        if affirmations:
+            return True
+        else:
+            return False
+
 
 
 # -------------------------------------------------------------------------------------
@@ -221,9 +239,7 @@ def get_one_message(msg):
     else:
         return "自分何いうてんねん"
 
-def get_day_to_collect(context: Context):
-    
-    # trash_collection_days.xlsxの各行の情報がとって来れればいい状態:
+def retrieveWhenWhereFromContext(context:Context):
     garbage_type = context.garbage_type
     assert garbage_type
     area_candidates = context.area_candidates
@@ -231,10 +247,18 @@ def get_day_to_collect(context: Context):
     qs = Area.objects.filter(**area_candidates)
     assert len(qs) == 1
     area_id = qs[0].pk
-    ret_message = get_next_trash_day_of(garbage_type, area_id)
+    return garbage_type, area_id
+
+
+def get_day_to_collect(context: Context):
+    
+    garbage_type, area_id = retrieveWhenWhereFromContext(context)
+    target_month, target_day, garbage_type, day_or_night =\
+         get_next_trash_day_of(garbage_type, area_id)
+    ret_message = f"{target_month}月の{target_day}日が{garbage_type}を捨てる日だよ！{'時間帯は' + day_or_night + 'だよ' if day_or_night else '' }"
     return ret_message
 
-def get_next_trash_day_of(garbage_type, area_code):
+def get_next_trash_day_of(garbage_type, area_id):
     
     # TODO: dayOfWeekから次の{garbage_type}のゴミの日を計算してくれるmethod
     # areaの指定
@@ -242,7 +266,13 @@ def get_next_trash_day_of(garbage_type, area_code):
     # >>> get_trash_info_area_of(area)
     # The information is retrieved from the below site.
     # "https://www.city.funabashi.lg.jp/kurashi/gomi/001/p001523.html"
-    nthWeek, weekdays, day_or_night = get_trash_info_area_of(garbage_type, area_code)
+
+    """
+
+    return:
+        target_month, target_day, garbage_type, day_or_night
+    """
+    nthWeek, weekdays, day_or_night = get_trash_info_area_of(garbage_type, area_id)
     
     print(nthWeek, weekdays, day_or_night)
 
@@ -280,11 +310,15 @@ def get_next_trash_day_of(garbage_type, area_code):
     
     def calculate_closest_day_in_same_month(candidate_days, target_month):
         get_date_obj = lambda x: datetime.datetime(year=curr_year, month=target_month, day=x, hour=1)
-        filter_ = [x for x in candidate_days if get_date_obj(x) >= td]
-        if sum(filter_):#existing case
-            return min(filter_)
-        else:# does not case
-            return None
+
+        if isinstance(candidate_days, int):
+            return candidate_days if get_date_obj(candidate_days) >= td else None
+        elif isinstance(candidate_days, list):
+            filter_ = [x for x in candidate_days if get_date_obj(x) >= td]
+            if sum(filter_):#existing case
+                return min(filter_)
+            else:# does not case
+                return None
 
     # 今月の対象日が既に過ぎている場合があるため、今月・来月分けて候補日を計算する必要がある
     candidate_days = get_candidate_days(curr_year, curr_month)
@@ -295,8 +329,7 @@ def get_next_trash_day_of(garbage_type, area_code):
         candidate_days = get_candidate_days(curr_year, target_month)
         target_day = calculate_closest_day_in_same_month(candidate_days, target_month)
         
-
-    return f"{target_month}月の{target_day}日が{garbage_type}を捨てる日だよ！{'時間帯は' + day_or_night + 'だよ' if day_or_night else '' }"
+    return target_month, target_day, garbage_type, day_or_night
 
 
 
@@ -322,37 +355,38 @@ def get_trash_info_area_of(garbage_type, area_id) -> tuple:
 
 
 
-def set_reminder():
+def set_reminder(context: Context):
     """
     朝の時間帯にpush messageを送信するように記録しておく機能
     ---
-
+    args: 
+        context:Context
+        どこの地域のなんのゴミの情報をリマインドしたいか、
+        既にヒアリング済のcontextから情報を抽出し、
+        get_next_trash_day_of()を利用して情報を取得する。
     CREATE 
     (uuid, when2push, garbage_type) INTO Remind;
     """
-    return "TO BE DONE"
+    garbage_type, area_id = retrieveWhenWhereFromContext(context)
 
-def push_remind():
-    """
-    朝8時に 1-3までを実行する
-    1. Execute the following query
-        SELECT * WHERE when2push == {str(td)};
-    2. QuerySetをuuidごとにまとめ、それぞれのユーザに対してメッセージを送信する。
-    """
-    today = datetime.date.today()
-    # https://bradmontgomery.net/blog/date-lookups-django/
-    QuerySet = Remind.objects.filter(
-        when2push__day=today.day,
-        when2push__year=today.year,
-        when2push__month=today.month,
+    target_month, target_day, garbage_type, day_or_night =\
+        get_next_trash_day_of(garbage_type, area_id)
+    # TODO:時間帯は決め打ち
+    # どこかで検討しないと。
+    target_hour = 8
+    target_datetime = datetime.datetime(
+        year=curr_year,
+        month=target_month,
+        day=target_day,
+        hour=target_hour
     )
-    target_uuids = []
-    for q in QuerySet:
-        print("Push remind message for ", q.uuid)
-        # the pushing processing will be implemented later.
-        target_uuids.append(q.uuid)
-    return target_uuids
-
+    # CREATE
+    Remind(
+        uuid=context.uuid,
+        when2push=target_datetime,
+        garbage_type=garbage_type
+    ).save()
+    return "TO BE DONE"
 
 
 def reply_msg(reply_token, text):
