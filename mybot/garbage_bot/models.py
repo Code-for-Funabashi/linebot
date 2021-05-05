@@ -47,6 +47,9 @@ class CollectDay(models.Model):
     nth_week = models.IntegerField()
     day_or_night = models.IntegerField()
 
+    def __str__(self):
+        return f"{self.garbage_type} , {self.area_id}"
+
 
 class Remind(models.Model):
     uuid = models.CharField(max_length=64, null=False)
@@ -68,7 +71,7 @@ class Context(models.Model):
             null=True,
             )
     # area_id = models.ForeignKey(Area, on_delete=models.CASCADE)
-    area_candidates = models.JSONField(null=True)
+    area_candidates = models.JSONField(null=True, default=dict)
     # 追加したい属性が発生した場合、こちらのカラムで対応する
     optional = models.JSONField(null=True)
     

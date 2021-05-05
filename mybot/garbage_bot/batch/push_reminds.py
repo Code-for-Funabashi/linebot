@@ -1,3 +1,7 @@
+""" 
+Batch functions can be executed using Custom command
+(https://docs.djangoproject.com/en/3.2/howto/custom-management-commands/)
+"""
 from garbage_bot.models import (
     Remind, Area, CollectDay,
     Context, GarbageType,
