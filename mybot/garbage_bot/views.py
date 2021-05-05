@@ -125,7 +125,7 @@ class ContextManager():
             else:
                 # context was done.
                 bot_msg = "Okay, that's the end of our conversation."
-            self.initialize_state(0)
+            self.initialize_state()
         # remider setting
         elif state >= 30:
             # TODO:
