@@ -82,8 +82,11 @@ class ContextManager():
 
     def receive_msg(self):
         state = self.context.state
+        # FIXME:
+        # 話している内容を初期化する機能を追加してstateを途中でも元に戻せるようにしたい。
+        
         if state == 0:
-            # 何がしたくて話しかけられたかを最初話す
+            # 何がしたくて話しかけられたかを最初話す    
             bot_msg = self.parse_message()
 
         elif state == 21:
@@ -110,7 +113,7 @@ class ContextManager():
             # ex:「前、教えた情報、前日にリマインドする？」と聞く
 
             bot_msg = "前、教えた情報、前日にリマインドする？"
-            self.update("state", 26)
+            self.update_state(26)
 
         elif state == 26:
             # if so, execute set_reminder()
@@ -122,7 +125,7 @@ class ContextManager():
             else:
                 # context was done.
                 bot_msg = "Okay, that's the end of our conversation."
-            self.update("state", 0)
+            self.initialize_state(0)
         # remider setting
         elif state >= 30:
             # TODO:
@@ -153,7 +156,7 @@ class ContextManager():
             state = 0
             reply_msg_ = "ごめんなさい。も一度何したいか教えてちょ！"
 
-        self.update("state", state)
+        self.update_state(state)
         return reply_msg_
 
     def ask_where(self, key_value:dict):
@@ -185,13 +188,13 @@ class ContextManager():
                 break
         if len(qs) == 1:
             # finished to specify where you want to know the day to collect.
-            self.update("state", 24) # =>次は聞きたい地域
+            self.update_state(24) # =>次は聞きたい地域
             # printじゃなくreply msg func使う
             bot_msg = "OK、じゃあ次は捨てたいゴミの種類を教えてね！\n\
                 可燃ゴミ / 不燃ゴミ / 資源ゴミ / 有価物"
         elif len(qs)>1:
             bot_msg = f"OK、さらに{next_name}を指定してください！"
-            self.update("state", self.context.state + 1)
+            self.update_state(self.context.state + 1)
             # quick reply
         else:
             pass
@@ -205,15 +208,28 @@ class ContextManager():
         # if specified.
         else:
             print("ok! 計算するね。")
-            
-            self.update("garbage_type", qs[0])
+            setattr(self.context, "garbage_type", qs[0])
             reply = get_day_to_collect(self.context)
-            self.update("state", self.context.state + 1)
+            self.update_state(self.context.state + 1)
         return reply
 
-    def update(self, key, value):
-        setattr(self.context, key, value)
-        self.context.save()
+    def update_state(self, new_state):
+        """
+        stateが変更されるタイミングでレコードを新しく作成する。
+        """
+        setattr(self.context, "state", new_state)
+        setattr(self.context, "updated_at", datetime.datetime.now())
+        self.context.create()
+
+    def initialize_state(self):
+        """
+        新しく場所の指定/ゴミの指定が出来るように初期化してレコードを追加する。
+        """
+        setattr(self.context, "state", 0)
+        setattr(self.context, "area_candidates", {})
+        setattr(self.context, "garbage_type", None)
+        setattr(self.context, "updated_at", datetime.datetime.now())
+        self.context.create()
     
     def get_or_create(self, user_id):
         
@@ -393,6 +409,8 @@ def set_reminder(context: Context):
         hour=target_hour
     )
     # CREATE
+    # XXX:
+    # when2pushが5/10になってほしいところが5/6になってしまっている。
     Remind(
         uuid=context.uuid,
         when2push=target_datetime,
