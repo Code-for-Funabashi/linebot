@@ -409,7 +409,7 @@ def reply_msg(reply_token, text):
         "messages":[
             {
                 "type":"text",
-                "text":f"Hello, user\n {text}"
+                "text":text
             },
             ]
     }

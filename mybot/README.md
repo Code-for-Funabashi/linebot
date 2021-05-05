@@ -32,4 +32,9 @@ LINE_ENDPOINT=https://api.line.me/v2/bot/message/reply
 4. 作成したline applicationに話しかけて、使ってみましょう。
 
 
+
+
+## デモ
+
+<img src="https://github.com/Jumpo-523/linebot/tree/feature/bug-fix/mybot/garbage_bot/statics/demo.jpg">
 <!-- M1 macでherokuにあげようとすると、"Error: Exec format error"と言うエラーが出る。 -->
