@@ -30,3 +30,6 @@ LINE_ENDPOINT=https://api.line.me/v2/bot/message/reply
 3. (ngrokなどを利用して)ローカルに立ち上げたサーバーをインターネットに公開し、生成されたHTTPS url をcallback endpointとして利用する。
 
 4. 作成したline applicationに話しかけて、使ってみましょう。
+
+
+<!-- M1 macでherokuにあげようとすると、"Error: Exec format error"と言うエラーが出る。 -->

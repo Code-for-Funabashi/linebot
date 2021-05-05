@@ -33,8 +33,13 @@ def setup_data(sender, **kwargs):
     
     # import pdb;pdb.set_trace()
     try:
+        preexisting = Area.objects.all()
+        if len(preexisting) > 0:
+            raise IntegrityError("Records are already existed")
+
         # Area creation.
         area_objects = []
+
         with open("/code/data/area_df.csv", "r+") as f:
             lines = csv.reader(f)
             head = next(lines)
@@ -60,6 +65,9 @@ def setup_data(sender, **kwargs):
         import pdb; pdb.set_trace()
 
     try:
+        preexisting = GarbageType.objects.all()
+        if len(preexisting) > 0:
+            raise IntegrityError("Records are already existed")
         # GarbageType creation.
         GarbageTypeList = ["burnable",
                         "non_burnable",
@@ -71,6 +79,9 @@ def setup_data(sender, **kwargs):
         print(f"Error for GarbageType: {e}")
         pass
     try:
+        preexisting = CollectDay.objects.all()
+        if len(preexisting) > 0:
+            raise IntegrityError("Records are already existed")
         # CollectDay creation.
         obj_list = []
 
@@ -81,7 +92,6 @@ def setup_data(sender, **kwargs):
                 # ['あ', '旭町1丁目', '0,3', '1', '2木', '2', '2.0', '', '2', '3', '旭町', '1丁目']
                 obj_list.extend(get_json(l, i))
             
-
         CollectDay.objects.bulk_create([CollectDay(**obj) for obj in obj_list])
     except IntegrityError as e:
         print(f"Error for CollectDay: {e}")
