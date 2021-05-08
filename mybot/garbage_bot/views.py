@@ -9,7 +9,7 @@ from garbage_bot.models import (
     Context, GarbageType,
     )
 from django.views.decorators.csrf import csrf_exempt
-
+from .utils import *
 CHANNEL_SECRET = os.environ["CHANNEL_SECRET_"]
 ACCESS_TOKEN = os.environ["ACCESS_TOKEN_"]
 
@@ -70,12 +70,12 @@ def callback(request):
     return HttpResponse(status=200)
 
 
-
 # 過去のお話を踏まえて、話す内容決める
 class ContextManager():
 
     def __init__(self, user_id, msg):
         context: Context = self.get_or_create(user_id)
+        self.user_id = user_id
         self.context = context
         self.msg = msg
         self.reply = None
@@ -83,8 +83,9 @@ class ContextManager():
     def receive_msg(self):
         state = self.context.state
         # FIXME:
-        # 話している内容を初期化する機能を追加してstateを途中でも元に戻せるようにしたい。
+        # - 話している内容を初期化する機能を追加してstateを途中でも元に戻せるようにしたい.
         
+        self.small_talk()
         if state == 0:
             # 何がしたくて話しかけられたかを最初話す    
             bot_msg = self.parse_message()
@@ -109,9 +110,6 @@ class ContextManager():
             bot_msg = self.ask_what()
         # with 24 + msg:garbage_typeを答えてもらった -> 25
         elif state == 25:
-            # TODO:
-            # ex:「前、教えた情報、前日にリマインドする？」と聞く
-
             bot_msg = "前、教えた情報、前日にリマインドする？"
             self.update_state(26)
 
@@ -140,9 +138,14 @@ class ContextManager():
             # 二桁目：2==情報通知か3==リマインド通知かを表す
             # elif state == 2x: というコードは `elif state % 10 == x`と言う形で表すことで
             # ２つのケースにおける汎用メソッドとなる。
-
             bot_msg = "リマインドは実装中なんだわ"
         return bot_msg
+
+    def small_talk(self):
+        """ふなっしーの悪口など、本筋とは関係のない発話をさせる"""
+        reply_ = None
+        if "ふなっしー" in self.msg:
+            utils.push_msg(self.user_id, "おい、あいつの話はするな(笑)")
 
     def parse_message(self):
         
@@ -419,50 +422,5 @@ def set_reminder(context: Context):
     return "TO BE DONE"
 
 
-def reply_msg(reply_token, text):
-    
-    url = os.environ["LINE_ENDPOINT"]
-    body = {
-        "replyToken":reply_token,
-        "messages":[
-            {
-                "type":"text",
-                "text":text
-            },
-            ]
-    }
-    res = requests.post(url, headers={'Content-Type': 'application/json', 'Authorization': f'Bearer {ACCESS_TOKEN}'}, data=json.dumps(body))
-    # TODO:
-    # statusに応じてエラーを返すようにする。
-    assert res.status_code == 200
-    return "DONE"
 
 
-
-
-def get_message_body(text, text_type):
-    # TODO: test quick reply message function.
-    return {
-        "type": "text",
-        "text": "Select your favorite food category or send me your location!",
-        "quickReply": {
-            "items": [
-            {
-                "type": "action",
-                # "imageUrl": "https://example.com/tempura.png",
-                "action": {
-                "type": "message",
-                "label": "Remind",
-                "text": "Remind"
-                }
-            },
-            {
-                "type": "action",
-                "action": {
-                "type": "location",
-                "label": "Send location"
-                }
-            }
-            ]
-        }
-        }

@@ -47,25 +47,8 @@ def push_remind():
             ]
         }
 
-        requests.post(url, 
+        res = requests.post(url, 
             headers={'Content-Type': 'application/json', 'Authorization': f'Bearer {ACCESS_TOKEN}'},
             data=json.dumps(body)
         )
 
-def reply_msg(reply_token, text):
-    
-    url = os.environ["LINE_ENDPOINT"]
-    body = {
-        "replyToken":reply_token,
-        "messages":[
-            {
-                "type":"text",
-                "text":f"Hello, user\n {text}"
-            },
-            ]
-    }
-    requests.post(url, 
-        headers={'Content-Type': 'application/json', 'Authorization': f'Bearer {ACCESS_TOKEN}'},
-        data=json.dumps(body)
-    )
-    return "DONE"

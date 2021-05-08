@@ -44,6 +44,33 @@ def reply_msg(reply_token, text):
     return "DONE"
 
 
+def get_message_body(text, text_type):
+    # TODO: test quick reply message function.
+    return {
+        "type": "text",
+        "text": "Select your favorite food category or send me your location!",
+        "quickReply": {
+            "items": [
+            {
+                "type": "action",
+                # "imageUrl": "https://example.com/tempura.png",
+                "action": {
+                "type": "message",
+                "label": "Remind",
+                "text": "Remind"
+                }
+            },
+            {
+                "type": "action",
+                "action": {
+                "type": "location",
+                "label": "Send location"
+                }
+            }
+            ]
+        }
+        }
+
 def get_json(row, idx):
     out_list = []
 
