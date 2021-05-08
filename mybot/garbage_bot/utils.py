@@ -1,5 +1,48 @@
 from django.db import models
+import requests
+import os
+import json
 from garbage_bot.models import Area, GarbageType, CollectDay
+
+def push_msg(user, text):
+    url = os.environ["LINE_PUSH_ENDPOINT"]
+    user_list = [user]
+    body = {
+        "to": user_list,
+        "messages":[
+            {
+                "type":"text",
+                "text":text
+            }
+        ]
+    }
+    res = requests.post(url, 
+        headers={'Content-Type': 'application/json', 'Authorization': f'Bearer {os.environ["ACCESS_TOKEN_"]}'},
+        data=json.dumps(body)
+    )
+    assert res.status_code == 200
+    
+
+
+def reply_msg(reply_token, text):
+    
+    url = os.environ["LINE_ENDPOINT"]
+    body = {
+        "replyToken":reply_token,
+        "messages":[
+            {
+                "type":"text",
+                "text":f"Hello, user\n {text}"
+            },
+            ]
+    }
+    res = requests.post(url, 
+        headers={'Content-Type': 'application/json', 'Authorization': f'Bearer {os.environ["ACCESS_TOKEN_"]}'},
+        data=json.dumps(body)
+    )
+    assert res.status_code == 200
+    return "DONE"
+
 
 def get_json(row, idx):
     out_list = []
