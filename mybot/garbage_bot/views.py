@@ -1,3 +1,4 @@
+from django.db.models.fields import PositiveIntegerRelDbTypeMixin
 from django.shortcuts import render
 from django.http import HttpResponse, JsonResponse, HttpResponseRedirect
 import os, json, re
@@ -9,7 +10,9 @@ from garbage_bot.models import (
     Context, GarbageType,
     )
 from django.views.decorators.csrf import csrf_exempt
-
+from .utils import (
+    push_msg, reply_msg, quick_reply, get_logical_name
+    )
 CHANNEL_SECRET = os.environ["CHANNEL_SECRET_"]
 ACCESS_TOKEN = os.environ["ACCESS_TOKEN_"]
 
@@ -22,7 +25,6 @@ ACCESS_TOKEN = os.environ["ACCESS_TOKEN_"]
 td = datetime.datetime.now()
 curr_day = td.day
 curr_weekday = td.date().weekday()
-# weekday_of_first_day = td.replace(day=1).weekday()
 curr_month = td.month
 curr_year = td.year
 
@@ -46,7 +48,6 @@ def get_first_weekdays(year, month):
 @csrf_exempt
 def callback(request):
     # TODO: This function would be called when linebot was spoken to by user
-    # 
     if request.method == 'POST':
         request_json = json.loads(request.body.decode('utf-8'))
         # リクエストが空でないことを確認
@@ -62,32 +63,43 @@ def callback(request):
                     # 2. Extract message
                     msg = event['message']['text']
                     # 2. Instanciate a Context Manager.
-                    cm = ContextManager(user_id, msg)
-                    
+                    cm = ContextHandler(user_id, msg, reply_token)
                     # make a request.
-                    reply_msg(reply_token, cm.receive_msg())
-                    # reply += tool.reply_text(reply_token, text)
+                    cm.create_message()
+                    cm.reply()
+
     return HttpResponse(status=200)
 
 
-
 # 過去のお話を踏まえて、話す内容決める
-class ContextManager():
+class ContextHandler():
 
-    def __init__(self, user_id, msg):
+    def __init__(self, user_id, msg, reply_token):
         context: Context = self.get_or_create(user_id)
+        self.user_id = user_id
+        self.reply_token = reply_token
         self.context = context
         self.msg = msg
-        self.reply = None
+        self.msg_kwargs = {"type":"normal"}
 
-    def receive_msg(self):
+    def reply(self):
+        if self.msg_kwargs["type"] == "normal":
+            reply_msg(self.reply_token, self.msg)
+        elif self.msg_kwargs["type"] == "quick":
+            quick_reply(self.reply_token, self.msg, self.msg_kwargs["choices"])
+            pass
+        else:
+            raise Exception("message type is not defined.")
+
+    def create_message(self):
         state = self.context.state
         # FIXME:
-        # 話している内容を初期化する機能を追加してstateを途中でも元に戻せるようにしたい。
+        # - 話している内容を初期化する機能を追加してstateを途中でも元に戻せるようにしたい.
         
+        self.initial_talk()
         if state == 0:
             # 何がしたくて話しかけられたかを最初話す    
-            bot_msg = self.parse_message()
+            bot_msg = self.first_contact()
 
         elif state == 21:
         # 21: ask_where聞き終わり
@@ -103,15 +115,11 @@ class ContextManager():
         elif state == 23:
             bot_msg = self.ask_where({"address_name":self.msg})
 
-        # ask_what()
         # 何捨てたいのか聞く
         elif state == 24:
             bot_msg = self.ask_what()
         # with 24 + msg:garbage_typeを答えてもらった -> 25
         elif state == 25:
-            # TODO:
-            # ex:「前、教えた情報、前日にリマインドする？」と聞く
-
             bot_msg = "前、教えた情報、前日にリマインドする？"
             self.update_state(26)
 
@@ -140,13 +148,21 @@ class ContextManager():
             # 二桁目：2==情報通知か3==リマインド通知かを表す
             # elif state == 2x: というコードは `elif state % 10 == x`と言う形で表すことで
             # ２つのケースにおける汎用メソッドとなる。
-
             bot_msg = "リマインドは実装中なんだわ"
-        return bot_msg
+        self.msg = bot_msg
 
-    def parse_message(self):
+    def initial_talk(self):
+        """ふなっしーの悪口など、本筋とは関係のない発話をさせる"""
+        reply_ = None
+        if "ふなっしー" in self.msg:
+            push_msg(self.user_id, "おい、あいつの話はするな(笑)")
+        elif "初めから" in self.msg:
+            self.initialize_state()
+
+
+    def first_contact(self):
         
-        if "ゴミ" in self.msg and re.findall(r"捨てたい|？", self.msg):
+        if "ゴミ" in self.msg and re.findall(r"捨てたい|？|教えて", self.msg):
             state = 21
             reply_msg_ = "ゴミ捨てたいんですね！"+"どこの地域が良いですか？"
         elif "リマインド" in self.msg:
@@ -188,14 +204,16 @@ class ContextManager():
                 break
         if len(qs) == 1:
             # finished to specify where you want to know the day to collect.
-            self.update_state(24) # =>次は聞きたい地域
-            # printじゃなくreply msg func使う
+            self.update_state(24)
             bot_msg = "OK、じゃあ次は捨てたいゴミの種類を教えてね！\n\
                 可燃ゴミ / 不燃ゴミ / 資源ゴミ / 有価物"
         elif len(qs)>1:
-            bot_msg = f"OK、さらに{next_name}を指定してください！"
+            bot_msg = f"OK、さらに{get_logical_name(next_name)}を指定してください！"
             self.update_state(self.context.state + 1)
             # quick reply
+            self.msg_kwargs.update({"type":"quick"})
+            choices = [getattr(q_, next_name) for q_ in qs if getattr(q_, next_name, None)]
+            self.msg_kwargs.update({"choices":choices})
         else:
             pass
         return bot_msg
@@ -204,8 +222,10 @@ class ContextManager():
         qs = GarbageType.objects.filter(garbage_name=self.msg)
         if len(qs) != 1:
             reply = "ちょっと分からん買ったわ。もう一度答えてくれ.可燃ゴミ / 不燃ゴミ / 資源ゴミ / 有価物の中から選んでね！"
-            print(reply)
-        # if specified.
+            # TODO:
+            # 実際にボタンで選んでもらえるように"quick replyを導入する"
+            self.msg_kwargs.update({"type":"quick"})
+            self.msg_kwargs.update({"choices":["可燃ゴミ", "不燃ゴミ", "資源ゴミ", "有価物"]})
         else:
             print("ok! 計算するね。")
             setattr(self.context, "garbage_type", qs[0])
@@ -219,7 +239,8 @@ class ContextManager():
         """
         setattr(self.context, "state", new_state)
         setattr(self.context, "updated_at", datetime.datetime.now())
-        self.context.create()
+        self.context.pk = None
+        self.context.save()
 
     def initialize_state(self):
         """
@@ -417,52 +438,3 @@ def set_reminder(context: Context):
         garbage_type=garbage_type
     ).save()
     return "TO BE DONE"
-
-
-def reply_msg(reply_token, text):
-    
-    url = os.environ["LINE_ENDPOINT"]
-    body = {
-        "replyToken":reply_token,
-        "messages":[
-            {
-                "type":"text",
-                "text":text
-            },
-            ]
-    }
-    res = requests.post(url, headers={'Content-Type': 'application/json', 'Authorization': f'Bearer {ACCESS_TOKEN}'}, data=json.dumps(body))
-    # TODO:
-    # statusに応じてエラーを返すようにする。
-    assert res.status_code == 200
-    return "DONE"
-
-
-
-
-def get_message_body(text, text_type):
-    # TODO: test quick reply message function.
-    return {
-        "type": "text",
-        "text": "Select your favorite food category or send me your location!",
-        "quickReply": {
-            "items": [
-            {
-                "type": "action",
-                # "imageUrl": "https://example.com/tempura.png",
-                "action": {
-                "type": "message",
-                "label": "Remind",
-                "text": "Remind"
-                }
-            },
-            {
-                "type": "action",
-                "action": {
-                "type": "location",
-                "label": "Send location"
-                }
-            }
-            ]
-        }
-        }

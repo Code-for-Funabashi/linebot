@@ -1,13 +1,6 @@
 from django.db import models
 
-# Create your models here.
 
-
-sample_natsume = {"burnable":"-1/1,2/night",
-                "non_burnable":"3/3/",  "Resources・PET" : "-1/2/", "valuables" : "-1/2/"}
-
-
-# 町名(頭文字)/町名.1/可燃/可燃.1/不燃/資源/ペット/有価物/番地詳細
 
 class Area(models.Model):
     # TODO: develop the data model.
@@ -21,6 +14,7 @@ class Area(models.Model):
 
     def __str__(self):
         return self.town_name +"/"+ self.district_name +"/"+ self.address_name
+
 class GarbageType(models.Model):
     # TODO: develop the data model.
     # 可燃(週に2回) / 不燃 / 資源 / ペット / 有価物
