@@ -61,7 +61,7 @@ class Garbage_BotTestCase(TestCase):
             # TODO:
             # We could not pass the test because we could not take garbage_type in Japanese.
             # ("可燃ごみ", "4月の19日がburnableを捨てる日だよ！時間帯は昼だよ"),
-            ("burnable", "5月の3日がburnableを捨てる日だよ！時間帯は昼だよ")
+            ("burnable", "5月の27日がburnableを捨てる日だよ！時間帯は昼だよ")
         ]
         self.parameters_ask_where = [
             # user_id, msg, expected, expected_state
@@ -76,13 +76,12 @@ class Garbage_BotTestCase(TestCase):
         ]
 
     def test_ask_where(self):
-        # import pdb; pdb.set_trace()
         user_id = "test_case:ask_where"
         
 
         for user_id, msg, kv, expected, expected_state in self.parameters_ask_where:
             with self.subTest(p=(user_id, msg)):
-                cm = ContextManager(user_id, msg)
+                cm = ContextHandler(user_id, msg, reply_token="reply_token")
                 self.assertEqual(expected, cm.ask_where(kv))
                 self.assertEqual(expected_state, cm.context.state)
         pass
@@ -92,7 +91,7 @@ class Garbage_BotTestCase(TestCase):
         # context: Context = Context.objects.filter(uuid=user_id).latest()
         
         def _ask_what(user_id, msg):
-            cm = ContextManager(user_id, msg)
+            cm = ContextHandler(user_id, msg,  reply_token="reply_token")
             actual = cm.ask_what()
             return actual
         # TODO: expected作成
@@ -107,7 +106,6 @@ class Garbage_BotTestCase(TestCase):
 
     def test_manage_context(self):
         user_id = "test_case:manage_context"
-        # manage_context(user_id)
         pass
 
     def test_get_day_to_collect(self):
@@ -127,41 +125,11 @@ class Garbage_BotTestCase(TestCase):
             )
 
 
-
-    # def test_get_one_message(self):
-    #     for p, expected in self.parameters_casual_talks:
-    #         with self.subTest(p=p):
-    #             self.assertEqual(expected, get_one_message(p))
-
-
-    # def test_push_remind(self):
-    #     target_uuids = push_remind()
-    #     self.assertEqual(target_uuids, [os.environ["LINE_TEST_UID"]])
-    #     # when2push
-
-    # def test_parse_message(self):
-    #     for p, expected in self.parameters_parse_message:
-    #         with self.subTest(p=p):
-    #             self.assertEqual(expected, parse_message(p))
-    
-
-    # def test_choose_response(self):
-    #     for (content_type, text), expected \
-    #         in self.parameters_choose_response:
-    #         with self.subTest(content_type=content_type, text=text):
-    #             self.assertEqual(
-    #                 expected, 
-    #                 choose_response(content_type, text)
-    #                 )
-    # def test_get_trash_info_area_of(self):
-    #     # return values type check
-    #     actual = type(get_trash_info_area_of(area="natsume"))
-    #     self.assertEqual(dict, actual)
-class ContextManagerTestCase(TestCase):
+class ContextHandlerTestCase(TestCase):
     fixtures = ["garbage_bot/fixtures/fixture_1.json", ]
     def test_get_or_create(self):
         user_id = "new_user"
-        cm = ContextManager(user_id, msg="ゴミ捨てたい")
+        cm = ContextHandler(user_id, msg="ゴミ捨てたい")
 
         qs = Context.objects.filter(uuid=user_id)
         self.assertEqual(len(qs), 1)
@@ -170,7 +138,7 @@ class ContextManagerTestCase(TestCase):
         expected = "Okay I'll set the reminder"
         user_id = "test_case:state26"
 
-        cm = ContextManager(user_id, msg="うん")
+        cm = ContextHandler(user_id, msg="うん")
         actual = cm.receive_msg()
 
         self.assertEqual(expected, actual)
