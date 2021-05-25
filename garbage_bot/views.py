@@ -10,7 +10,7 @@ from garbage_bot.models import (
 from django.views.decorators.csrf import csrf_exempt
 from .utils import (
     push_msg, reply_msg, quick_reply, get_logical_name,
-    get_first_weekdays, curr_year, curr_month
+    get_first_weekdays, curr_year, curr_month, td
     )
 CHANNEL_SECRET = os.environ["CHANNEL_SECRET_"]
 ACCESS_TOKEN = os.environ["ACCESS_TOKEN_"]
