@@ -1,8 +1,6 @@
-from django.db.models.fields import PositiveIntegerRelDbTypeMixin
 from django.shortcuts import render
 from django.http import HttpResponse, JsonResponse, HttpResponseRedirect
 import os, json, re
-import requests
 import datetime
 
 from garbage_bot.models import (
@@ -11,39 +9,11 @@ from garbage_bot.models import (
     )
 from django.views.decorators.csrf import csrf_exempt
 from .utils import (
-    push_msg, reply_msg, quick_reply, get_logical_name
+    push_msg, reply_msg, quick_reply, get_logical_name,
+    get_first_weekdays, curr_year, curr_month
     )
 CHANNEL_SECRET = os.environ["CHANNEL_SECRET_"]
 ACCESS_TOKEN = os.environ["ACCESS_TOKEN_"]
-
-# TODO:
-# 曜日情報をどうとるべきか再検討する。
-# for schedule calculation.
-# FIXME:
-# この仕様だと、curr_monthが12月の時に nextmonth:1月になるので、
-# curr_yearの修正をしないといけないが出来ていない。
-td = datetime.datetime.now()
-curr_day = td.day
-curr_weekday = td.date().weekday()
-curr_month = td.month
-curr_year = td.year
-
-
-def get_first_weekdays(year, month):
-    """
-        input : year=2021, month=4
-        output: [(1, 3), (2, 4), (3, 5), (4, 6), (5, 0), (6, 1), (7, 2)]
-              :  means [(2021/04/01, 3(Thu)), (2021/04/02, 4(Fri)), .., (2021/04/07, 2(Wed)]
-    """
-    from calendar import Calendar
-    cal = Calendar()
-    first_week = cal.monthdayscalendar(year, month)[0]
-    wd_1st = first_week.index(1)
-    
-    first_weekdays = []
-    for d in range(1, 8):
-        first_weekdays.append((d, (wd_1st + d - 1)%7))
-    return first_weekdays    
 
 @csrf_exempt
 def callback(request):
