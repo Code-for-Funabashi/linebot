@@ -4,6 +4,19 @@ import os
 import json
 from garbage_bot.models import Area, GarbageType, CollectDay
 
+physical2logical_dict = {
+    "burnable": "可燃ゴミ",
+    "non_burnable":"不燃ゴミ",
+    "resources": "資源ゴミ",
+    "valuables": "有価物",
+    "town_name":"町名",
+    "district_name":"何丁目",
+    "address_name":"番地"
+}
+
+logical2physical_dict = {v:k for k,v in physical2logical_dict.items()}
+
+
 def push_msg(user, text):
     url = os.environ["LINE_PUSH_ENDPOINT"]
     user_list = [user]
@@ -32,7 +45,7 @@ def reply_msg(reply_token, text):
         "messages":[
             {
                 "type":"text",
-                "text":f"Hello, user\n {text}"
+                "text":text
             },
             ]
     }
@@ -44,32 +57,51 @@ def reply_msg(reply_token, text):
     return "DONE"
 
 
-def get_message_body(text, text_type):
-    # TODO: test quick reply message function.
-    return {
+def quick_reply(reply_token, text, choices):
+    import pdb; pdb.set_trace()
+    url = os.environ["LINE_ENDPOINT"]
+
+    choice_list = [
+        { 
+        "type": "action",
+        "action": {
+            "type": "message",
+            "text": c_text,
+            "label": c_text
+            }
+        } for c_text in choices]    
+    body =  {
+        "replyToken":reply_token,
         "type": "text",
-        "text": "Select your favorite food category or send me your location!",
-        "quickReply": {
-            "items": [
+        "text": text,
+        "messages":[
             {
-                "type": "action",
-                # "imageUrl": "https://example.com/tempura.png",
-                "action": {
-                "type": "message",
-                "label": "Remind",
-                "text": "Remind"
+                "type":"text",
+                "text":text,
+                "quickReply": {
+                    "items": choice_list 
+                    # + [
+                    # {
+                    #     "type": "action",
+                    #     "action": {
+                    #     "type": "location",
+                    #     "label": "Send location"
+                    #     }
+                    # }]
                 }
             },
-            {
-                "type": "action",
-                "action": {
-                "type": "location",
-                "label": "Send location"
-                }
-            }
             ]
+
+
         }
-        }
+    res = requests.post(url, 
+        headers={'Content-Type': 'application/json', 'Authorization': f'Bearer {os.environ["ACCESS_TOKEN_"]}'},
+        data=json.dumps(body)
+    )
+    assert res.status_code == 200
+    return "DONE"
+
+
 
 def get_json(row, idx):
     out_list = []
@@ -128,3 +160,6 @@ def get_json(row, idx):
 #         actual = None
 
 
+def get_logical_name(physical_name):
+    return physical2logical_dict[physical_name]
+    
