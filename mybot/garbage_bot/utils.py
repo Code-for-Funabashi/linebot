@@ -58,7 +58,7 @@ def reply_msg(reply_token, text):
 
 
 def quick_reply(reply_token, text, choices):
-    import pdb; pdb.set_trace()
+
     url = os.environ["LINE_ENDPOINT"]
 
     choice_list = [
