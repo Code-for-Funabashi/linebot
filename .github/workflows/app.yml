@@ -25,7 +25,6 @@ jobs:
           ACCESS_TOKEN_: ${{ secrets.LINE_ACCESS_TOKEN }}
           CHANNEL_SECRET_: ${{ secrets.LINE_CHANNEL_SECRET }}
         run: |
-          cd ./mybot
           echo TEST_UID_=$TEST_UID_ > .env;
           echo ACCESS_TOKEN_=$ACCESS_TOKEN_ >> .env;
           echo CHANNEL_SECRET_=$CHANNEL_SECRET_ >> .env;
