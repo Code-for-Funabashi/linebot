@@ -38,3 +38,11 @@ LINE_ENDPOINT=https://api.line.me/v2/bot/message/reply
 
 <img src="https://github.com/Jumpo-523/linebot/tree/feature/bug-fix/mybot/garbage_bot/statics/img/demo.jpg">
 <!-- M1 macでherokuにあげようとすると、"Error: Exec format error"と言うエラーが出る。 -->
+
+
+## Deploy
+
+https://devcenter.heroku.com/ja/articles/container-registry-and-runtime
+
+(※)M1 mac でデプロイ時`Process exited with status 126`というエラーが発生しました。
+[どうやらarmアーキテクチャ向けのDocker Imageであることが原因みたい？です](https://zenn.dev/daku10/articles/m1-heroku-container-trouble-exec-format-error)
