@@ -5,19 +5,23 @@ import csv
 
 from django.db.utils import IntegrityError
 
+
 class GarbageBotConfig(AppConfig):
-    name = 'garbage_bot'
+    name = "garbage_bot"
+
     def ready(self):
         post_migrate.connect(setup_data, sender=self)
 
+
 def make_area_records(row):
     from garbage_bot.models import Area
+
     return Area(
-        area_id=row["index"]+1,
+        area_id=row["index"] + 1,
         address_name=row["address_name"],
         district_name=row["district_name"],
-        town_name=row["town_name"]
-        )
+        town_name=row["town_name"],
+    )
 
 
 def setup_data(sender, **kwargs):
@@ -30,7 +34,6 @@ def setup_data(sender, **kwargs):
     from garbage_bot.models import Area, GarbageType, CollectDay
     from garbage_bot.utils import get_json
 
-    
     # import pdb;pdb.set_trace()
     try:
         preexisting = Area.objects.all()
@@ -48,7 +51,7 @@ def setup_data(sender, **kwargs):
             for l_ in lines:
                 # l_ = [el if el else None for el in l.strip().split(",")]
                 # print(l_)
-                row=dict(
+                row = dict(
                     index=int(l_[0]),
                     town_name=l_[1],
                     district_name=l_[2],
@@ -60,21 +63,25 @@ def setup_data(sender, **kwargs):
         print(f"Error for Area: {e}")
         pass
     except Exception as e:
-
         print(e)
-        import pdb; pdb.set_trace()
 
     try:
         preexisting = GarbageType.objects.all()
         if len(preexisting) > 0:
             raise IntegrityError("Records are already existed")
         # GarbageType creation.
-        GarbageTypeList = ["burnable",
-                        "non_burnable",
-                        "resources",
-                        "valuables",]
-        GarbageType.objects.bulk_create([GarbageType(garbage_type=idx+1,garbage_name=type_)
-                                            for idx, type_ in enumerate(GarbageTypeList)])
+        GarbageTypeList = [
+            "burnable",
+            "non_burnable",
+            "resources",
+            "valuables",
+        ]
+        GarbageType.objects.bulk_create(
+            [
+                GarbageType(garbage_type=idx + 1, garbage_name=type_)
+                for idx, type_ in enumerate(GarbageTypeList)
+            ]
+        )
     except IntegrityError as e:
         print(f"Error for GarbageType: {e}")
         pass
@@ -91,9 +98,8 @@ def setup_data(sender, **kwargs):
             for i, l in enumerate(lines):
                 # ['あ', '旭町1丁目', '0,3', '1', '2木', '2', '2.0', '', '2', '3', '旭町', '1丁目']
                 obj_list.extend(get_json(l, i))
-            
+
         CollectDay.objects.bulk_create([CollectDay(**obj) for obj in obj_list])
     except IntegrityError as e:
         print(f"Error for CollectDay: {e}")
         pass
-
