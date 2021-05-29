@@ -8,61 +8,112 @@ class Migration(migrations.Migration):
 
     initial = True
 
-    dependencies = [
-    ]
+    dependencies = []
 
     operations = [
         migrations.CreateModel(
-            name='Area',
+            name="Area",
             fields=[
-                ('area_id', models.IntegerField(primary_key=True, serialize=False)),
-                ('town_name', models.CharField(max_length=15, null=True)),
-                ('district_name', models.CharField(max_length=15, null=True)),
-                ('address_name', models.CharField(max_length=64, null=True)),
+                ("area_id", models.IntegerField(primary_key=True, serialize=False)),
+                ("town_name", models.CharField(max_length=15, null=True)),
+                ("district_name", models.CharField(max_length=15, null=True)),
+                ("address_name", models.CharField(max_length=64, null=True)),
             ],
         ),
         migrations.CreateModel(
-            name='GarbageType',
+            name="GarbageType",
             fields=[
-                ('garbage_type', models.IntegerField(primary_key=True, serialize=False)),
-                ('garbage_name', models.CharField(max_length=20)),
+                (
+                    "garbage_type",
+                    models.IntegerField(primary_key=True, serialize=False),
+                ),
+                ("garbage_name", models.CharField(max_length=20)),
             ],
         ),
         migrations.CreateModel(
-            name='Remind',
+            name="Remind",
             fields=[
-                ('id', models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('uuid', models.CharField(max_length=64)),
-                ('when2push', models.DateField(auto_now=True)),
-                ('garbage_type', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to='garbage_bot.garbagetype')),
+                (
+                    "id",
+                    models.AutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                ("uuid", models.CharField(max_length=64)),
+                ("when2push", models.DateField(auto_now=True)),
+                (
+                    "garbage_type",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        to="garbage_bot.garbagetype",
+                    ),
+                ),
             ],
         ),
         migrations.CreateModel(
-            name='Context',
+            name="Context",
             fields=[
-                ('id', models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('session_id', models.CharField(max_length=64)),
-                ('state', models.IntegerField()),
-                ('area_candidates', models.JSONField(null=True)),
-                ('optional', models.JSONField(null=True)),
-                ('uuid', models.CharField(max_length=64)),
-                ('created_at', models.DateTimeField(auto_now=True)),
-                ('updated_at', models.DateTimeField(auto_now=True)),
-                ('garbage_type', models.ForeignKey(null=True, on_delete=django.db.models.deletion.CASCADE, to='garbage_bot.garbagetype')),
+                (
+                    "id",
+                    models.AutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                ("session_id", models.CharField(max_length=64)),
+                ("state", models.IntegerField()),
+                ("area_candidates", models.JSONField(null=True)),
+                ("optional", models.JSONField(null=True)),
+                ("uuid", models.CharField(max_length=64)),
+                ("created_at", models.DateTimeField(auto_now=True)),
+                ("updated_at", models.DateTimeField(auto_now=True)),
+                (
+                    "garbage_type",
+                    models.ForeignKey(
+                        null=True,
+                        on_delete=django.db.models.deletion.CASCADE,
+                        to="garbage_bot.garbagetype",
+                    ),
+                ),
             ],
             options={
-                'get_latest_by': ['updated_at'],
+                "get_latest_by": ["updated_at"],
             },
         ),
         migrations.CreateModel(
-            name='CollectDay',
+            name="CollectDay",
             fields=[
-                ('id', models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('weekday_info', models.CharField(max_length=10)),
-                ('nth_week', models.IntegerField()),
-                ('day_or_night', models.IntegerField()),
-                ('area_id', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to='garbage_bot.area')),
-                ('garbage_type', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to='garbage_bot.garbagetype')),
+                (
+                    "id",
+                    models.AutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                ("weekday_info", models.CharField(max_length=10)),
+                ("nth_week", models.IntegerField()),
+                ("day_or_night", models.IntegerField()),
+                (
+                    "area_id",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        to="garbage_bot.area",
+                    ),
+                ),
+                (
+                    "garbage_type",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        to="garbage_bot.garbagetype",
+                    ),
+                ),
             ],
         ),
     ]

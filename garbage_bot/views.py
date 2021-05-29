@@ -209,7 +209,7 @@ class ContextHandler:
             self.msg_kwargs.update({"type": "quick"})
             self.msg_kwargs.update({"choices": ["可燃ゴミ", "不燃ゴミ", "資源ゴミ", "有価物"]})
         else:
-            print("ok! 計算するね。")
+            # print("ok! 計算するね。")
             setattr(self.context, "garbage_type", qs[0])
             reply = get_day_to_collect(self.context)
             self.update_state(self.context.state + 1)
@@ -228,11 +228,15 @@ class ContextHandler:
         """
         新しく場所の指定/ゴミの指定が出来るように初期化してレコードを追加する。
         """
-        setattr(self.context, "state", 0)
-        setattr(self.context, "area_candidates", {})
-        setattr(self.context, "garbage_type", None)
-        setattr(self.context, "updated_at", datetime.datetime.now())
-        self.context.create()
+
+        new_context: Context = Context()
+        new_context.state = 0
+        new_context.area_candidates = {}
+        new_context.garbage_type = None
+        new_context.created_at = self.context.created_at
+        new_context.updated_at = datetime.datetime.now()
+
+        new_context.save()
 
     def get_or_create(self, user_id):
 

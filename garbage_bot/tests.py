@@ -21,22 +21,7 @@ class Garbage_BotTestCase(TestCase):
     ]
 
     def setUp(self):
-        # garbage_type, area_code, expected
-        self.parameters_type_area = [
-            # 日時は各地域ごとに調整していくつか試す。
-            # 3/19の段階では、次の燃えるゴミの日は3/23なのでこちらを指定
-            ("burnable", "natsume", f"3月の30日がburnableを捨てる日だよ！時間帯はnightだよ"),
-            ("non_burnable", "natsume", f"3月の18日がnon_burnableを捨てる日だよ！"),
-        ]
-        self.parameters_parse_message = [
-            ("燃える", "burnable"),
-            ("燃えない", "non_burnable"),
-            ("ゴミ捨てたい", "next_ask_trash_type"),
-            # ("可燃ゴミ捨てたい？", "burnable"),
-            ("あ", "casual_talk"),
-            ("ち", "casual_talk"),
-            ("？", "unknown"),
-        ]
+
         Remind.objects.create(
             uuid="test_case:remind",
             # Currently when2push = models.DateField(auto_now=True)
@@ -50,23 +35,29 @@ class Garbage_BotTestCase(TestCase):
             # TODO:
             # We could not pass the test because we could not take garbage_type in Japanese.
             # ("可燃ごみ", "4月の19日がburnableを捨てる日だよ！時間帯は昼だよ"),
-            ("burnable", "5月の27日がburnableを捨てる日だよ！時間帯は昼だよ"),
+            ("burnable", "5月の31日がburnableを捨てる日だよ！時間帯は昼だよ"),
         ]
         self.parameters_ask_where = [
             # user_id, msg, expected, expected_state
-            ("test_case:ask_where_state21", "旭町", {"town_name": "旭町"}, None, 22),
+            (
+                "test_case:ask_where_state21",
+                "旭町",
+                {"town_name": "旭町"},
+                "OK、さらに何丁目を指定してください！",
+                22,
+            ),
             (
                 "test_case:ask_where_state22_1",
                 "1丁目",
                 {"district_name": "1丁目"},
-                None,
+                "OK、じゃあ次は捨てたいゴミの種類を教えてね！\n                可燃ゴミ / 不燃ゴミ / 資源ゴミ / 有価物",
                 24,
             ),
             (
                 "test_case:ask_where_state22_2",
                 "2丁目",
                 {"district_name": "2丁目"},
-                None,
+                "OK、さらに番地を指定してください！",
                 23,
             ),
             # ...
@@ -85,7 +76,6 @@ class Garbage_BotTestCase(TestCase):
 
     def test_ask_what(self):
         user_id = "test_case:ask_what"
-        # context: Context = Context.objects.filter(uuid=user_id).latest()
 
         def _ask_what(user_id, msg):
             cm = ContextHandler(user_id, msg, reply_token="reply_token")
@@ -108,7 +98,7 @@ class Garbage_BotTestCase(TestCase):
     def test_get_day_to_collect(self):
         # import pdb;pdb.set_trace()
         # TODO: utc問題解消しておく
-        expected = "5月の3日がburnableを捨てる日だよ！時間帯は昼だよ"
+        expected = "5月の31日がburnableを捨てる日だよ！時間帯は昼だよ"
         user_id = "test_case:get_day_to_collect"
         try:
             context: Context = Context.objects.filter(uuid=user_id).latest()
@@ -136,7 +126,7 @@ class ContextHandlerTestCase(TestCase):
         user_id = "test_case:state26"
 
         ch = ContextHandler(user_id, msg="うん", reply_token="testSetRemider")
-        ch.create_msg()
+        ch.create_message()
         actual = ch.msg
         self.assertEqual(expected, actual)
         qs = Remind.objects.filter(
