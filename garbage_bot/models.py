@@ -1,7 +1,6 @@
 from django.db import models
 
 
-
 class Area(models.Model):
     # TODO: develop the data model.
     # property list
@@ -13,7 +12,8 @@ class Area(models.Model):
     address_name = models.CharField(max_length=64, null=True)
 
     def __str__(self):
-        return self.town_name +"/"+ self.district_name +"/"+ self.address_name
+        return self.town_name + "/" + self.district_name + "/" + self.address_name
+
 
 class GarbageType(models.Model):
     # TODO: develop the data model.
@@ -51,24 +51,25 @@ class Remind(models.Model):
     garbage_type = models.ForeignKey(GarbageType, on_delete=models.CASCADE)
 
 
-# 
+#
 # class UserRecentHistory(models.Model):
 #     uuid = models.CharField(max_length=64, null=False)
 #     created_at = models.DateTimeField(auto_now=True)
 #     updated_at = models.DateTimeField(auto_now=True)
 
+
 class Context(models.Model):
     session_id = models.CharField(max_length=64, null=False)
-    state = models.IntegerField() # 各セッション毎に、どこまでユーザとの会話が進んでいるか？
-    garbage_type = models.ForeignKey(GarbageType, 
-            on_delete=models.CASCADE, 
-            null=True,
-            )
+    state = models.IntegerField()  # 各セッション毎に、どこまでユーザとの会話が進んでいるか？
+    garbage_type = models.ForeignKey(
+        GarbageType,
+        on_delete=models.CASCADE,
+        null=True,
+    )
     # area_id = models.ForeignKey(Area, on_delete=models.CASCADE)
     area_candidates = models.JSONField(null=True, default=dict)
     # 追加したい属性が発生した場合、こちらのカラムで対応する
     optional = models.JSONField(null=True)
-    
 
     uuid = models.CharField(max_length=64, null=False)
     created_at = models.DateTimeField(auto_now=True)
@@ -76,5 +77,6 @@ class Context(models.Model):
 
     class Meta:
         get_latest_by = ["updated_at"]
+
     def __str__(self):
         return f"{self.uuid} / {self.state} / {str(self.created_at)}"
