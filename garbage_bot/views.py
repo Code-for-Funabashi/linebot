@@ -4,34 +4,45 @@ import os, json, re
 import datetime
 
 from garbage_bot.models import (
-    Remind, Area, CollectDay,
-    Context, GarbageType,
-    )
+    Remind,
+    Area,
+    CollectDay,
+    Context,
+    GarbageType,
+)
 from django.views.decorators.csrf import csrf_exempt
 from .utils import (
-    push_msg, reply_msg, quick_reply, get_logical_name,
-    get_first_weekdays, curr_year, curr_month, td
-    )
+    push_msg,
+    reply_msg,
+    quick_reply,
+    get_logical_name,
+    get_first_weekdays,
+    curr_year,
+    curr_month,
+    td,
+)
+
 CHANNEL_SECRET = os.environ["CHANNEL_SECRET_"]
 ACCESS_TOKEN = os.environ["ACCESS_TOKEN_"]
+
 
 @csrf_exempt
 def callback(request):
     # TODO: This function would be called when linebot was spoken to by user
-    if request.method == 'POST':
-        request_json = json.loads(request.body.decode('utf-8'))
+    if request.method == "POST":
+        request_json = json.loads(request.body.decode("utf-8"))
         # リクエストが空でないことを確認
-        if(request_json != None):
+        if request_json != None:
             # イベントの取得
-            for event in request_json['events']:
+            for event in request_json["events"]:
                 print(event)
-                reply_token = event['replyToken']
-                message_type = event['message']['type']
+                reply_token = event["replyToken"]
+                message_type = event["message"]["type"]
                 user_id = event["source"]["userId"]
-                
-                if message_type == 'text':
+
+                if message_type == "text":
                     # 2. Extract message
-                    msg = event['message']['text']
+                    msg = event["message"]["text"]
                     # 2. Instanciate a Context Manager.
                     cm = ContextHandler(user_id, msg, reply_token)
                     # make a request.
@@ -42,15 +53,14 @@ def callback(request):
 
 
 # 過去のお話を踏まえて、話す内容決める
-class ContextHandler():
-
+class ContextHandler:
     def __init__(self, user_id, msg, reply_token):
         context: Context = self.get_or_create(user_id)
         self.user_id = user_id
         self.reply_token = reply_token
         self.context = context
         self.msg = msg
-        self.msg_kwargs = {"type":"normal"}
+        self.msg_kwargs = {"type": "normal"}
 
     def reply(self):
         if self.msg_kwargs["type"] == "normal":
@@ -61,29 +71,29 @@ class ContextHandler():
         else:
             raise Exception("message type is not defined.")
 
-    def create_message(self):
+    def create_message(self) -> None:
         state = self.context.state
         # FIXME:
         # - 話している内容を初期化する機能を追加してstateを途中でも元に戻せるようにしたい.
-        
+
         self.initial_talk()
         if state == 0:
-            # 何がしたくて話しかけられたかを最初話す    
+            # 何がしたくて話しかけられたかを最初話す
             bot_msg = self.first_contact()
 
         elif state == 21:
-        # 21: ask_where聞き終わり
-            bot_msg = self.ask_where({"town_name":self.msg})
-            
+            # 21: ask_where聞き終わり
+            bot_msg = self.ask_where({"town_name": self.msg})
+
         # with 21 + msg:町名を答えてもらった -> 22
         elif state == 22:
-            bot_msg = self.ask_where({"district_name":self.msg})
+            bot_msg = self.ask_where({"district_name": self.msg})
 
         # 22: n丁目なのか答えてもらう
         # with 22 + msg:n丁目を答えてもらった -> 23: DONE
-        
+
         elif state == 23:
-            bot_msg = self.ask_where({"address_name":self.msg})
+            bot_msg = self.ask_where({"address_name": self.msg})
 
         # 何捨てたいのか聞く
         elif state == 24:
@@ -110,7 +120,7 @@ class ContextHandler():
             # Already know where to collect/ what type of garbage??
             # 1. check the detail of remind.
             # 2. if not known, retry to ask as we did in state >=20
-            
+
             # 1st digit and 2nd digit could have different meanings.
             # Suppose if we implement state % 10 == 2: ...
             # then the above codes could be reused for remider-setting.
@@ -129,15 +139,14 @@ class ContextHandler():
         elif "初めから" in self.msg:
             self.initialize_state()
 
-
     def first_contact(self):
-        
+
         if "ゴミ" in self.msg and re.findall(r"捨てたい|？|教えて", self.msg):
             state = 21
-            reply_msg_ = "ゴミ捨てたいんですね！"+"どこの地域が良いですか？"
+            reply_msg_ = "ゴミ捨てたいんですね！" + "どこの地域が良いですか？"
         elif "リマインド" in self.msg:
             state = 31
-            reply_msg_ = "リマインド承知！"+"どこの地域が良いですか？"
+            reply_msg_ = "リマインド承知！" + "どこの地域が良いですか？"
         else:
             state = 0
             reply_msg_ = "ごめんなさい。も一度何したいか教えてちょ！"
@@ -145,7 +154,7 @@ class ContextHandler():
         self.update_state(state)
         return reply_msg_
 
-    def ask_where(self, key_value:dict):
+    def ask_where(self, key_value: dict):
         # inspect the input.
 
         # FIXME:
@@ -164,7 +173,7 @@ class ContextHandler():
             return bot_msg
         else:
             self.context.area_candidates.update(key_value)
-        next_name = None
+        next_name: str = ""
         for idx, name in enumerate(["town_name", "district_name", "address_name"]):
             if self.context.area_candidates.get(name):
                 # last_specified_name = self.context.area_candidates[name]
@@ -177,16 +186,19 @@ class ContextHandler():
             self.update_state(24)
             bot_msg = "OK、じゃあ次は捨てたいゴミの種類を教えてね！\n\
                 可燃ゴミ / 不燃ゴミ / 資源ゴミ / 有価物"
-        elif len(qs)>1:
+        elif len(qs) > 1:
             bot_msg = f"OK、さらに{get_logical_name(next_name)}を指定してください！"
             self.update_state(self.context.state + 1)
             # quick reply
-            self.msg_kwargs.update({"type":"quick"})
-            choices = [getattr(q_, next_name) for q_ in qs if getattr(q_, next_name, None)]
-            self.msg_kwargs.update({"choices":choices})
+            self.msg_kwargs.update({"type": "quick"})
+            choices = [
+                getattr(q_, next_name) for q_ in qs if getattr(q_, next_name, None)
+            ]
+            self.msg_kwargs.update({"choices": choices})
         else:
             pass
         return bot_msg
+
     def ask_what(self):
         # retreive
         qs = GarbageType.objects.filter(garbage_name=self.msg)
@@ -194,8 +206,8 @@ class ContextHandler():
             reply = "ちょっと分からん買ったわ。もう一度答えてくれ.可燃ゴミ / 不燃ゴミ / 資源ゴミ / 有価物の中から選んでね！"
             # TODO:
             # 実際にボタンで選んでもらえるように"quick replyを導入する"
-            self.msg_kwargs.update({"type":"quick"})
-            self.msg_kwargs.update({"choices":["可燃ゴミ", "不燃ゴミ", "資源ゴミ", "有価物"]})
+            self.msg_kwargs.update({"type": "quick"})
+            self.msg_kwargs.update({"choices": ["可燃ゴミ", "不燃ゴミ", "資源ゴミ", "有価物"]})
         else:
             print("ok! 計算するね。")
             setattr(self.context, "garbage_type", qs[0])
@@ -221,9 +233,9 @@ class ContextHandler():
         setattr(self.context, "garbage_type", None)
         setattr(self.context, "updated_at", datetime.datetime.now())
         self.context.create()
-    
+
     def get_or_create(self, user_id):
-        
+
         qs = Context.objects.filter(uuid=user_id)
         if len(qs) == 0:
             context = Context.objects.create(uuid=user_id, state=0)
@@ -239,7 +251,6 @@ class ContextHandler():
             return False
 
 
-
 # -------------------------------------------------------------------------------------
 # state == None(新規ユーザ)の場合、新しいセッションを発行する
 # state == 4の場合、新しいセッションを発行する
@@ -253,7 +264,8 @@ def get_one_message(msg):
     else:
         return "自分何いうてんねん"
 
-def retrieveWhenWhereFromContext(context:Context):
+
+def retrieveWhenWhereFromContext(context: Context):
     garbage_type = context.garbage_type
     assert garbage_type
     area_candidates = context.area_candidates
@@ -265,15 +277,17 @@ def retrieveWhenWhereFromContext(context:Context):
 
 
 def get_day_to_collect(context: Context):
-    
+
     garbage_type, area_id = retrieveWhenWhereFromContext(context)
-    target_month, target_day, garbage_type, day_or_night =\
-         get_next_trash_day_of(garbage_type, area_id)
+    target_month, target_day, garbage_type, day_or_night = get_next_trash_day_of(
+        garbage_type, area_id
+    )
     ret_message = f"{target_month}月の{target_day}日が{garbage_type}を捨てる日だよ！{'時間帯は' + day_or_night + 'だよ' if day_or_night else '' }"
     return ret_message
 
+
 def get_next_trash_day_of(garbage_type, area_id):
-    
+
     # TODO: dayOfWeekから次の{garbage_type}のゴミの日を計算してくれるmethod
     # areaの指定
     # area = "夏見5～7丁目"
@@ -286,20 +300,23 @@ def get_next_trash_day_of(garbage_type, area_id):
     return:
         target_month, target_day, garbage_type, day_or_night
     """
-    
+
     nthWeek, weekdays, day_or_night = get_trash_info_area_of(garbage_type, area_id)
-    
+
     print(nthWeek, weekdays, day_or_night)
 
     day_or_night = "昼" if day_or_night == 1 else "夜"
     import calendar
+
     weekdays = [int(wd) for wd in weekdays.split(",")]
-    
+
     target_month = curr_month
 
     def get_candidate_days(curr_year, curr_month):
         first_weekdays_current_month = get_first_weekdays(curr_year, curr_month)
-        first_target_weekday = list(filter(lambda x: x[1] in weekdays, first_weekdays_current_month))
+        first_target_weekday = list(
+            filter(lambda x: x[1] in weekdays, first_weekdays_current_month)
+        )
 
         if len(first_target_weekday) == 1:
             # get day first_target_weekday[0][0]
@@ -309,30 +326,40 @@ def get_next_trash_day_of(garbage_type, area_id):
             else:
                 # 毎週収集される場合
                 first_days = [fwd[0] for fwd in first_target_weekday]
-                candidate_days = [fd + (nthWeek_ - 1) * 7 for fd in first_days for nthWeek_ in range(1, 6)
-                        if fd + (nthWeek_ - 1) * 7 < 32]
+                candidate_days = [
+                    fd + (nthWeek_ - 1) * 7
+                    for fd in first_days
+                    for nthWeek_ in range(1, 6)
+                    if fd + (nthWeek_ - 1) * 7 < 32
+                ]
 
-        elif len(first_target_weekday) >= 2: 
+        elif len(first_target_weekday) >= 2:
             # 可燃ごみ
-            if nthWeek == -1:# every week garbages are collected.
+            if nthWeek == -1:  # every week garbages are collected.
                 first_days = [fwd[0] for fwd in first_target_weekday]
-                candidate_days = [fd + (nthWeek_ - 1) * 7 for fd in first_days for nthWeek_ in range(1, 6) if fd + (nthWeek_ - 1) * 7 < 32]
+                candidate_days = [
+                    fd + (nthWeek_ - 1) * 7
+                    for fd in first_days
+                    for nthWeek_ in range(1, 6)
+                    if fd + (nthWeek_ - 1) * 7 < 32
+                ]
         else:
             # maybe not occurred.
             raise Exception("IRREGULAR PATTERN")
         return candidate_days
-    
-    
+
     def calculate_closest_day_in_same_month(candidate_days, target_month):
-        get_date_obj = lambda x: datetime.datetime(year=curr_year, month=target_month, day=x, hour=1)
+        get_date_obj = lambda x: datetime.datetime(
+            year=curr_year, month=target_month, day=x, hour=1
+        )
 
         if isinstance(candidate_days, int):
             return candidate_days if get_date_obj(candidate_days) >= td else None
         elif isinstance(candidate_days, list):
             filter_ = [x for x in candidate_days if get_date_obj(x) >= td]
-            if sum(filter_):#existing case
+            if sum(filter_):  # existing case
                 return min(filter_)
-            else:# does not case
+            else:  # does not case
                 return None
 
     # 今月の対象日が既に過ぎている場合があるため、今月・来月分けて候補日を計算する必要がある
@@ -343,27 +370,26 @@ def get_next_trash_day_of(garbage_type, area_id):
         target_month = curr_month + 1
         candidate_days = get_candidate_days(curr_year, target_month)
         target_day = calculate_closest_day_in_same_month(candidate_days, target_month)
-        
+
     return target_month, target_day, garbage_type, day_or_night
-
-
-
 
 
 def get_trash_info_area_of(garbage_type, area_id) -> tuple:
     # TODO: get data from area_trash_days table
-    # we have to retrieve info like the sample_natsume 
+    # we have to retrieve info like the sample_natsume
     # "mon":0, "tue":1, "wed":2, "thu":3, "fri":4, "sat":5, "sun":6
     # According to pandas document, the day of the week with Monday=0, Sunday=6.
     # syntax: {1}/{2}/{3}
     #   {1}: n-th week or every week (-1)
     #   {2}: weekdays
     #   {3}: day or night (or no information if blank)
-    
+
     # garbage_type, area_idから収集日情報を取得
     qs = CollectDay.objects.filter(garbage_type=garbage_type, area_id=area_id)
     if len(qs) > 1:
-        raise Exception("Target day is not yet to identified. Something wrong may occurred to DB")
+        raise Exception(
+            "Target day is not yet to identified. Something wrong may occurred to DB"
+        )
     else:
         collect_day = qs[0]
     nthWeek: int = collect_day.nth_week
@@ -373,38 +399,33 @@ def get_trash_info_area_of(garbage_type, area_id) -> tuple:
     return nthWeek, weekdays, day_or_night
 
 
-
 def set_reminder(context: Context):
     """
     朝の時間帯にpush messageを送信するように記録しておく機能
     ---
-    args: 
+    args:
         context:Context
         どこの地域のなんのゴミの情報をリマインドしたいか、
         既にヒアリング済のcontextから情報を抽出し、
         get_next_trash_day_of()を利用して情報を取得する。
-    CREATE 
+    CREATE
     (uuid, when2push, garbage_type) INTO Remind;
     """
     garbage_type, area_id = retrieveWhenWhereFromContext(context)
 
-    target_month, target_day, garbage_type, day_or_night =\
-        get_next_trash_day_of(garbage_type, area_id)
+    target_month, target_day, garbage_type, day_or_night = get_next_trash_day_of(
+        garbage_type, area_id
+    )
     # TODO:時間帯は決め打ち
     # どこかで検討しないと。
     target_hour = 8
     target_datetime = datetime.datetime(
-        year=curr_year,
-        month=target_month,
-        day=target_day,
-        hour=target_hour
+        year=curr_year, month=target_month, day=target_day, hour=target_hour
     )
     # CREATE
     # XXX:
     # when2pushが5/10になってほしいところが5/6になってしまっている。
     Remind(
-        uuid=context.uuid,
-        when2push=target_datetime,
-        garbage_type=garbage_type
+        uuid=context.uuid, when2push=target_datetime, garbage_type=garbage_type
     ).save()
     return "TO BE DONE"
